@@ -5,7 +5,7 @@ import os
 import re
 import scipy.signal as signal
 
-cutoff = 0.1
+cutoff = 0.15
 
 labels = {
     "upward_sections": "Forward Movement CoF",
@@ -105,7 +105,7 @@ def find_x_segments(xpos: np.ndarray):
 
 	return xpos_peaks, xpos_valleys
 
-def plot_CoF(upward_sections, forward_friction, downward_sections, backward_friction):
+def plot_CoF(upward_sections, forward_friction, downward_sections, backward_friction,cutoff=None):
 	"""
 	Plots the Coefficient of Friction (CoF) for upward and downward sections of a tribology test.
 
@@ -115,13 +115,34 @@ def plot_CoF(upward_sections, forward_friction, downward_sections, backward_fric
 	- downward_sections (List[np.ndarray]): List of arrays representing the downward sections of the test.
 	- backward_friction (List[np.ndarray]): List of arrays representing the friction in the backward direction for each downward section.
 	"""
-	for ii in range(len(upward_sections)):
-		plt.plot(upward_sections[ii], forward_friction[ii], c='b',label=labels["upward_sections"] if ii == 0 else "")
+
+	all_x_values = np.concatenate(upward_sections + downward_sections)
+	min_x, max_x = np.min(all_x_values), np.max(all_x_values)
+
+	section_number = len(upward_sections)
+	if section_number>100:
+		print("section number",section_number)
+		sparce=int(section_number/50)
+	else: 
+		sparce=1
+	
+
+	for ii in range(section_number):
 		
-	for ii in range(len(downward_sections)):
-		plt.plot(downward_sections[ii], backward_friction[ii],c='r',label=labels["downward_sections"] if ii == 0 else "")
-		# plt.show()
+		if ii%sparce==0:
+			plt.plot(upward_sections[ii], forward_friction[ii], c='b',label=labels["upward_sections"] if ii == 0 else "")
+			plt.plot(downward_sections[ii], backward_friction[ii],c='r',label=labels["downward_sections"] if ii == 0 else "")
+		else:
+			pass
+		# plt.plot(upward_sections[ii], forward_friction[ii], c='b',label=labels["upward_sections"] if ii == 0 else "")
 		
+		# plt.plot(downward_sections[ii], backward_friction[ii],c='r',label=labels["downward_sections"] if ii == 0 else "")
+		
+
+	x_value_at_percentage = min_x + (max_x - min_x) * (cutoff )
+	x2_value_at_percentage = min_x + (max_x - min_x) * (1-cutoff )
+	plt.axvline(x=x_value_at_percentage, color='g', linestyle='--', label=f'{cutoff*100}% of x-axis')
+	plt.axvline(x=x2_value_at_percentage, color='g', linestyle='--')
 	plt.legend()
 	plt.show()
 
@@ -156,31 +177,53 @@ def segment_data(xpos: np.ndarray, xpos_peaks: np.ndarray, xpos_valleys: np.ndar
 		
 	return upward_sections, forward_friction, downward_sections, backward_friction
 
+def calculate_CoF(upward_sections, forward_friction, downward_sections, backward_friction, cutoff=0.1):
+	print("section lenght",len(upward_sections), len(downward_sections))
+	
+	forward_friction_avg=np.zeros(len(forward_friction))
+	backward_friction_avg=np.zeros(len(backward_friction))
+	CoF_avg=np.zeros(len(forward_friction))
+
+	for ii in range(len(forward_friction)):
+		forward_cutoff =int(forward_friction[ii].shape[0]*cutoff)
+		backwad_cutoff =int(backward_friction[ii].shape[0]*cutoff)
+
+		forward_friction_avg[ii]=np.mean(forward_friction[ii][forward_cutoff:-forward_cutoff])
+		backward_friction_avg[ii]=np.mean(backward_friction[ii][backwad_cutoff:-backwad_cutoff])
+
+		CoF_avg[ii]=(abs(forward_friction_avg[ii])+abs(backward_friction_avg[ii]))*0.5
+
+
+	print("forward friction",forward_friction_avg, "\nbackward friction",backward_friction_avg,"\nCoF",CoF_avg)
+
+
+	return CoF_avg
 
 
 
-data,xpos,Fx,Fz=get_data('DATA\\1_IL_20N_20mms_Test1',300, True)
+
+file_name='DATA\\OA-10_10N_100mms_test4_May8'
+data,xpos,Fx,Fz=get_data(file_name,800, True)
 
 
 
-# print(data.head())
+
 
 xpos_peaks, xpos_valleys = find_x_segments(xpos)
 
 print("peaks and valleys",xpos_peaks, xpos_valleys)
 upward_sections, forward_friction, downward_sections, backward_friction=segment_data(xpos, xpos_peaks, xpos_valleys,Fx,Fz)
 
-plot_CoF(upward_sections, forward_friction, downward_sections, backward_friction)
-
-def calculate_CoF(upward_sections, forward_friction, downward_sections, backward_friction):
-	print("section lenght",len(upward_sections), len(downward_sections))
-
-	pass
+plot_CoF(upward_sections, forward_friction, downward_sections, backward_friction, cutoff)
 
 
-calculate_CoF(upward_sections, forward_friction, downward_sections, backward_friction)
+reported_CoF=calculate_CoF(upward_sections, forward_friction, downward_sections, backward_friction,cutoff)
 
 
+plt.plot(reported_CoF)
+plt.show()	
+
+np.savetxt(file_name+"_reported_CoF.csv", reported_CoF, delimiter=',', header="CoF at each cycle")   # X is an array
 # print((upward_sections[0]))
 
 # max_length = len(upward_sections[0])

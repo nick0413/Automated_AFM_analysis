@@ -2,24 +2,24 @@ function [data, header] = mireadsingle(file)
 
 f = fopen (file,'r');
 
-if f == -1
+if f == -1 % file not found handleing 
     data = [];
     header = [];
     return
 end
 
-buf=fread(f, 'uchar=>uint8')';
+buf=fread(f, 'uchar=>uint8')';%read the file into a buffer as a string
 
-ind = findstr(buf, 'data');
-cut = find(buf(ind:end)==10,1,'first');
+ind = findstr(buf, 'data'); % find the first occurance of 'data'
+cut = find(buf(ind:end)==10,1,'first'); % find the first \n (ASCII code 10)  after 'data'
 
-c = textscan(char(buf(1:ind+cut-1))', '%14s%s','Delimiter','\n','Whitespace','');
+c = textscan(char(buf(1:ind+cut-1))', '%14s%s','Delimiter','\n','Whitespace','');%Reads the header section of the file into c, splitting it into lines and then into two parts per line based on a fixed width and delimiter settings
 
-header = makestruct(c);
+header = makestruct(c);%C into a structured array 
 
 nbufs = size(header.bufferLabel,1)-1;
 
-if strcmpi(header.fileType,'Spectroscopy')
+if strcmpi(header.fileType,'Spectroscopy')%Checks if the file type specified in the header is 'Spectroscopy'.
     if header.DataPoints == 0
         data = zeros(0,3,nbufs);
         return
@@ -27,11 +27,11 @@ if strcmpi(header.fileType,'Spectroscopy')
     
     if strcmpi(header.data, 'BINARY')
         %data = convchars2float(buf(ind+cut:end));               
-        data = convchar(buf(ind+cut:end),'single');
-        nd = numel(data);
+        data = convchar(buf(ind+cut:end),'single');%convert to floats 
+        nd = numel(data);%Calculates the number of elements in data
         
         pts=[0;header.chunk(:,2)];
-        cpts=cumsum(pts);
+        cpts=cumsum(pts);%Calculates the cumulative sum of pts, which could be used to determine the starting indices of each data chunk.
         
         if nd ~= cpts(end) || nd~= header.DataPoints
             data = nan;

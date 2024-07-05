@@ -49,7 +49,8 @@ if strcmpi(header.fileType,'Spectroscopy')%Checks if the file type specified in 
         
         data = reshape (data, [nd/nbufs, 1, nbufs]);
         data = cat(2, repmat(x, [1, 1, nbufs]), data, repmat(t, [1,1,nbufs]));        
-    elseif strcmpi(header.data, 'ASCII')
+    
+	elseif strcmpi(header.data, 'ASCII')
         c = textscan(char(buf(ind+cut:end))','%n%n%n');
         t = reshape(c{1}, [numel(c{1})/nbufs, 1, nbufs]);
         x = reshape(c{2}, [numel(c{2})/nbufs, 1, nbufs]);

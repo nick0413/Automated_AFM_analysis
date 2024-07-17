@@ -11,21 +11,30 @@ import re
 '''
 
 
-
 ''' CORE LOADING FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 	These functions parse the input files.
 '''
 
 def find_binary_data_offset(filename):
-    with open(filename, 'rb') as file:  # Open in binary mode
-        while True:
-            line = file.readline()
-            if b"data" in line:  # Check if "data" is in the current line
-                break  # Found the line, exit the loop
-        # The current file position is at the beginning of the binary data
-        offset = file.tell()  # Get the current position as the offset
-    return offset
+	'''
+		Find the offset given the position of the "data" keyword in the file.
+		
+		divinding the file from the number of pixels and the data type and starting from the end,
+		I found can lead to data from a buffer ending up in the next buffer.
+
+		As i understand it, the data keyword marks the end of the ascii header and the beginning of the binary data.
+		Thats what this function is for. It returns the offset in bytes where the binary data starts.
+		
+	'''
+	with open(filename, 'rb') as file:  
+		while True:
+			line = file.readline()
+			if b"data" in line:  
+				break  
+	
+		offset = file.tell()  
+	return offset
 
 
 def _load_mi_image(filename, allow_16_bit=False):
@@ -73,17 +82,8 @@ def _load_mi_image(filename, allow_16_bit=False):
 							#We know the binary blob starts after the line where the data is defined
 		for line in file:
 			''' First 14 characters seem to be the name of the property. Value is the rest of the line '''
-			key = line[:14].strip()#TODO check if this is always 14 characters- apparently not 
+			key = line[:14].strip()
 			val = line[14:].strip()
-			'''#TODO   COUNTER EXAMPLE | counter example doesnt work
-			xSensitivity  2.2965000000000000e-007
-			xNonlinearity 1.1140000000000002e-003
-			xNonlinearity21.1140000000000002e-003
-			
-			'''
-			#!   ↑↑↑↑↑ A better method would be to split the line at the first whitespace 
-			#!         and then strip the whitespace left, but then again, not all lines have a whitespace
-			#!         A last posibility would be to split at the first number, but that would be a bit more complicated. 
 
 			''' Automatic conversions '''
 			if key in ints:
@@ -132,26 +132,29 @@ def _load_mi_image(filename, allow_16_bit=False):
 	meta['buffer_count'] = buffer_count # How many buffers we saw and that we need to extract from the binary blob
 
 	if not allow_16_bit:
-		print("not allowing 16 bit")
+		# print("not allowing 16 bit")
 		assert meta['data'] == 'BINARY_32', "doesn't seem to be 32bit. Set allow_16_bit=True, but the functionality is UNTESTED!"
 	
 	for b in meta['buffers']:
-		print(f"b: {type(b)}\t {b},")
+	
 		
 		bytes_per_pixel = 4 if meta['data'] == 'BINARY_32' else 2 # int32 ~ _4_*8bit
 		pixels = meta['xPixels'] * meta['yPixels']
 		field_size_bytes = pixels * bytes_per_pixel # Size of a single buffer
 		
-		print(f"filesize: {filesize}\t field_size_bytes: {field_size_bytes}\t pixels: {pixels}\t meta[buffer_count]: {meta['buffer_count']}\t b: {b}")
+		
 		
 		
 		offset = find_binary_data_offset(filename) + b * field_size_bytes # Starting location of the buffer b
 		
-		print(offset,find_binary_data_offset(filename))
+		
 		
 		data = np.fromfile(filename, dtype=np.int32, offset=offset, count=pixels) # count is num of ints to load, not bytes.
-		data = data.reshape((meta['xPixels'], meta['yPixels']))
+		# print("old shape shape", data.shape)
+		data = data.reshape((meta['yPixels'], meta['xPixels']))
+		#Changed the X-Y order to Y-X, the X-Y order works fine for NxN images, but not for N*M images
 
+		# print("new shape",data.shape)
 		''' Convert the range and units of the buffer data '''
 		range_ = meta['buffers'][b]['bufferRange']
 		zFactor = range_ / (2.**31) # 32-1 - First bit is for sign!

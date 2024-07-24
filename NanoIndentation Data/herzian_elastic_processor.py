@@ -11,10 +11,14 @@ def main():
           f'where a and b are fitting parameters: \na = {fitting_params[0]} \n' \
             f'b = {fitting_params[1]}')
     plot_data(nanoindentation_data, fitting_params)
+    print(findx(2000, fitting_params[0], fitting_params[1])) # finds x if 2000 is the load applied to the material
 
 def function(params, x):
     a, b = params
     return b + a * x**(1.5)
+
+def findx(load, a, b):
+    return ((load - b) / a)**(2/3)
 
 def load_data(excel_file:str):
     excel_data = pd.read_excel(excel_file, header=None)
@@ -39,6 +43,7 @@ def plot_data(data:pd.DataFrame, fitted_data_params:list):
 
     plt.legend()
     plt.show()
+
 
 if __name__ == '__main__':
     main()

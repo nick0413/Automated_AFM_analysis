@@ -1,7 +1,7 @@
 import originpro as op
 import pandas as pd
 import os
-from functools import reduce
+from functools import reduce # processing for originpro
 
 # import matplotlib.pyplot as plt
 

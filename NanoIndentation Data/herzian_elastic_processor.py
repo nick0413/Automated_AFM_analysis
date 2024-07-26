@@ -12,7 +12,7 @@ def main():
     print(f'Here are the fitting parameters when fitted to P = a(h^3/2) + b \n' \
           f'where a and b are fitting parameters: \na = {fitting_params[0]} \n' \
             f'b = {fitting_params[1]}')
-    text = f'P = a(h^3/2) + b \na = {round(fitting_params[0], 2)} \nb = {round(fitting_params[1], 2)}'
+    text = rf'P = $ah^\frac{{3}}{{2}} + b$'+ f'\na = {round(fitting_params[0], 2)} \nb = {round(fitting_params[1], 2)}'
     print(findx(2000, fitting_params[0], fitting_params[1])) # finds x if 2000 is the load applied to the material
     fitting_xvals = np.linspace(0, findx(axis_limits[3], fitting_params[0], fitting_params[1]), 1000) # 1000 evenly spaced values between 0 and the max indentation depth
 

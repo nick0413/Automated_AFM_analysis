@@ -10,8 +10,10 @@ import scipy.signal as signal
 	Tribo is a work in progress module that is designed to process tribology data from a tribometer.
 
 	Authored by: 	Nicolas Cordoba 	|| cordobagarzonnicolas@gmail.com
-					Albert Kalayil 		|| albertkalayil2@gmail.com
+					Albert Kalayil 		|| 79732912+AlbertKalayil@users.noreply.github.com
 
+# Refactoring Complete
+					
 '''
 
 def split_string(s):

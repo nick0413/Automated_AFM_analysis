@@ -10,7 +10,7 @@ import scipy.signal as signal
 	Tribo is a work in progress module that is designed to process tribology data from a tribometer.
 
 	Authored by: 	Nicolas Cordoba 	|| cordobagarzonnicolas@gmail.com
-					Albert Kalayil 		|| 
+					Albert Kalayil 		|| albertkalayil2@gmail.com
 
 '''
 

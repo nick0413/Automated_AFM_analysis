@@ -1,0 +1,213 @@
+import agilent_loader as ag
+import os 
+import sys
+import re 
+import numpy as np
+import agilent_loader as ag
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+import scipy.optimize
+import warnings
+import shutil
+
+def fit_image_to_polynomial(image, degree):
+	'''
+	Fits a 2D image to a polynomial of a given degree.
+
+	Parameters
+	----------
+	image: np.ndarray
+		2D array of image data
+	degree: int
+		Degree of the polynomial to fit to the image
+	'''
+	
+	y, x = np.indices(image.shape)
+	x = x.flatten()
+	y = y.flatten()
+	z = image.flatten()  
+
+	
+	def poly_model(coeffs, x, y, degree, z=None):
+		idx = 0
+		model = np.zeros_like(x, dtype=np.float64)
+		for i in range(degree + 1):
+			for j in range(degree + 1 - i):
+				model += coeffs[idx] * (x ** i) * (y ** j)
+				idx += 1
+		return model - z if z is not None else model
+
+	
+	def num_coeffs(degree):
+		return (degree + 1) * (degree + 2) // 2
+
+	
+	initial_guess = np.zeros(num_coeffs(degree))
+	res = scipy.optimize.least_squares(poly_model, initial_guess, args=(x, y, degree, z))
+
+	
+	fitted_image = poly_model(res.x, x, y, degree).reshape(image.shape)
+
+	return fitted_image, res.x
+
+
+def check_and_prepare_folder(folder_path):
+	
+	if not os.path.exists(folder_path):
+		
+		os.makedirs(folder_path)
+		print(f"Folder '{folder_path}' created.")
+	else:
+	
+		for filename in os.listdir(folder_path):
+			file_path = os.path.join(folder_path, filename)
+			try:
+				if os.path.isfile(file_path) or os.path.islink(file_path):
+					os.unlink(file_path)  # Remove file or link
+				elif os.path.isdir(file_path):
+					shutil.rmtree(file_path)  # Remove directory
+			except Exception as e:
+				print(f'Failed to delete {file_path}. Reason: {e}')
+		print(f"Folder '{folder_path}' already exists and is now empty.")
+
+
+def get_current_mi_files_in_folder(folder):
+	return [f for f in os.listdir(folder) if '.mi' in f]
+
+
+def get_mi_files_in_folder(folder):
+
+	files_in_folder = get_current_mi_files_in_folder(folder)
+
+	for filename in files_in_folder:
+		# Generate the new filename by replacing spaces with underscores and removing "@"
+		new_filename = filename.replace(" ", "_").replace("@", "")
+		
+		# Construct the full old and new file paths
+		old_file_path = os.path.join(folder, filename)
+		new_file_path = os.path.join(folder, new_filename)
+		
+		# Rename the file
+		os.rename(old_file_path, new_file_path)
+
+	files_in_folder = get_current_mi_files_in_folder(folder)
+	return files_in_folder
+
+
+def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5), show=False):
+	'''
+	Parameters
+	----------
+	file: agilent_loader.MiFile
+		The MiFile object to be plotted
+	friction: np.ndarray
+		2D array of friction data
+	topography: np.ndarray
+		2D array of topography data
+	results_folder: str
+		The folder to save the results
+	file_path: str	
+		The name of the file to be saved
+	title: str
+		The title of the plot
+	resolution: int
+		The resolution of the plot
+	aspect_ratio: tuple
+		The aspect ratio of the plot
+	show: bool
+		Whether or not to show the plot
+
+	'''
+	fig,ax=plt.subplots(1,2,figsize=aspect_ratio,dpi=resolution)
+
+	file= center_sample(file)
+	topography=topography*1e9
+	
+	fit_topology, _ = fit_image_to_polynomial(topography, 2)
+	topography=topography-fit_topology
+
+	im1=ax[0].imshow(averaged_friction, cmap='inferno', extent=file.extent)
+	im2=ax[1].imshow(topography, cmap='inferno', extent=file.extent)
+	
+	ax[0].set_title('Friction')
+	ax[0].set_xticks([])
+	ax[0].set_yticks([])
+
+
+	ax[1].set_title('Topography')
+	ax[1].set_xticks([])
+	ax[1].set_yticks([])
+
+	scale_length_um = 1
+	x_pad=0.9
+	y_pad=0.1
+	x_low=file.extent[1]*x_pad
+	y_low=file.extent[3]*y_pad
+
+
+	scale_bar1 = Line2D([x_low, x_low+ scale_length_um], [y_low,y_low], color='white', linewidth=3)
+	scale_bar2 = Line2D([x_low, x_low+ scale_length_um], [y_low,y_low], color='white', linewidth=3)
+
+	ax[0].add_line(scale_bar1)
+	ax[0].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
+	ax[1].add_line(scale_bar2)
+	ax[1].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
+
+
+	cbar1=fig.colorbar(im1,ax=ax[0],fraction=0.046, pad=0.04)
+	cbar2=fig.colorbar(im2,ax=ax[1],fraction=0.046, pad=0.04)
+	cbar1.set_label("Friction force [V]")
+	cbar2.set_label("Height $[ nm]$")
+
+	plt.tight_layout(rect=[0, 0, 1, 0.95])
+	plt.savefig(results_folder+f"\\Friction_force_and_topography_{file_path}.png")
+	if show:
+		plt.show()
+	plt.clf()
+	plt.close()
+
+def center_sample(file):
+	file.extent[1]=file.extent[1]-file.extent[0]
+	file.extent[0]=0
+	file.extent[3]=file.extent[3]-file.extent[2]
+	file.extent[2]=0
+	return file
+
+
+def plot_CoF(Cof_for_runs,Cof_for_runs_std,results_folder):
+	x_axis=np.arange(len(Cof_for_runs))
+	plt.figure(figsize =(10, 5),dpi=300) 
+	plt.plot(x_axis,Cof_for_runs)
+	plt.fill_between(x_axis,Cof_for_runs-Cof_for_runs_std,Cof_for_runs+Cof_for_runs_std,alpha=0.5)
+	plt.title("Friction force as a function of cycles")
+	plt.xlabel("Cycles over the sample")
+	plt.ylabel("Friction force [V]")
+	plt.savefig(results_folder+"\\Friction_force_for_cycles.png")
+
+
+def load_buffers_from_file(file):
+	friction_arrays=[]
+	topography_arrays=[]
+
+	for buffer in file.buffers:
+		
+		if buffer.bufferLabel == "Friction":
+			friction_arrays.append(buffer.data)
+			
+		elif buffer.bufferLabel == "Topography":
+			topography_arrays.append(buffer.data)
+
+	return friction_arrays,topography_arrays
+
+def calculate_CoF(friction_array,file_path):
+	if len(friction_array)==2:
+
+		averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5
+		friction_std=np.std(averaged_friction)
+		friction_mean=np.mean(averaged_friction)
+		return averaged_friction,friction_mean,friction_std
+
+	else:
+		warnings.warn(f"{file_path} doesnt contain both trace and retrace friction chunks\nExpected 2 friction arrays, got %d" % len(friction_arrays)+f" with file {file_path}")
+		
+		return 

@@ -11,7 +11,7 @@ import scipy.signal as signal
 
 	Authored by: 	Nicolas Cordoba 	|| cordobagarzonnicolas@gmail.com
 					Albert Kalayil 		|| 79732912+AlbertKalayil@users.noreply.github.com
-					
+	# Refactored				
 '''
 
 def split_string(s):

@@ -29,6 +29,7 @@ def fit_image_to_polynomial(image, degree):
 
 	
 	def poly_model(coeffs, x, y, degree, z=None):
+
 		idx = 0
 		model = np.zeros_like(x, dtype=np.float64)
 		for i in range(degree + 1):
@@ -52,30 +53,64 @@ def fit_image_to_polynomial(image, degree):
 
 
 def check_and_prepare_folder(folder_path):
+	'''
+	Checks if a folder exists and is empty. If it does not exist, it creates it. If it exists and is not empty, it deletes all files and subfolders.
+
+	Parameters
+	----------
+	folder_path: str
+		The path to the folder to be checked and prepared
 	
-	if not os.path.exists(folder_path):
+	'''
+	
+	if not os.path.exists(folder_path):						# Create the folder if it does not exist
 		
 		os.makedirs(folder_path)
 		print(f"Folder '{folder_path}' created.")
-	else:
+
+	else:															# Delete all files and subfolders if the folder is not empty || Make sure you dont mix previous with new results										
 	
 		for filename in os.listdir(folder_path):
 			file_path = os.path.join(folder_path, filename)
 			try:
 				if os.path.isfile(file_path) or os.path.islink(file_path):
-					os.unlink(file_path)  # Remove file or link
+					os.unlink(file_path)  
 				elif os.path.isdir(file_path):
-					shutil.rmtree(file_path)  # Remove directory
+					shutil.rmtree(file_path) 
+
 			except Exception as e:
 				print(f'Failed to delete {file_path}. Reason: {e}')
+
+
 		print(f"Folder '{folder_path}' already exists and is now empty.")
 
 
 def get_current_mi_files_in_folder(folder):
+	'''
+	Returns a list of all .mi files in a folder.
+
+	Parameters
+	----------
+	folder: str
+		The path to the folder to search for .mi files in
+	'''
 	return [f for f in os.listdir(folder) if '.mi' in f]
 
 
 def get_mi_files_in_folder(folder):
+	'''
+	Returns the list of all .mi files in a folder with file renaming.
+	The function replaces spaces with underscores and removes "@" from the filenames so this is also compatible with older files. 
+
+	Parameters
+	----------
+	folder: str
+		The path to the folder to search for .mi files in
+
+	
+	'''
+	#TODO Add a check for the file extension
+	#TODO Add string comprehension for the file renaming, check units and add a warnings if the file doesnt contain the expected units or values.
 
 	files_in_folder = get_current_mi_files_in_folder(folder)
 
@@ -96,6 +131,10 @@ def get_mi_files_in_folder(folder):
 
 def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5), show=False):
 	'''
+	Plots the friction and topography data of a MiFile object and saves the plot to a file.
+	plots both friction and topography data on the same plot with respective colorbars and no axis labels, 
+	using the extent of the MiFile object as the plot limits and a scale bar of 1 um.
+
 	Parameters
 	----------
 	file: agilent_loader.MiFile
@@ -159,7 +198,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	cbar1.set_label("Friction force [V]")
 	cbar2.set_label("Height $[ nm]$")
 
-	plt.tight_layout(rect=[0, 0, 1, 0.95])
+	plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
 	plt.savefig(results_folder+f"\\Friction_force_and_topography_{file_path}.png")
 	if show:
 		plt.show()
@@ -167,6 +206,14 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	plt.close()
 
 def center_sample(file):
+	'''
+	turns the lower left corner of the sample to (0,0) and shits the extent accordingly
+	
+	Parameters
+	----------
+	file: agilent_loader.MiFile
+		The MiFile object to be centered
+	'''
 	file.extent[1]=file.extent[1]-file.extent[0]
 	file.extent[0]=0
 	file.extent[3]=file.extent[3]-file.extent[2]
@@ -175,6 +222,18 @@ def center_sample(file):
 
 
 def plot_CoF(Cof_for_runs,Cof_for_runs_std,results_folder):
+	'''
+	Plots the Coefficient of Friction as a function of cycles over the sample with error areas for the standard deviation, saves the plot to a file.
+
+	Parameters
+	----------
+	Cof_for_runs: np.ndarray
+		Array of Coefficient of Friction values
+	Cof_for_runs_std: np.ndarray
+		Array of Coefficient of Friction standard deviations
+	results_folder: str
+		The folder to save the results
+	'''
 	x_axis=np.arange(len(Cof_for_runs))
 	plt.figure(figsize =(10, 5),dpi=300) 
 	plt.plot(x_axis,Cof_for_runs)
@@ -183,9 +242,22 @@ def plot_CoF(Cof_for_runs,Cof_for_runs_std,results_folder):
 	plt.xlabel("Cycles over the sample")
 	plt.ylabel("Friction force [V]")
 	plt.savefig(results_folder+"\\Friction_force_for_cycles.png")
+	plt.clf()
+	plt.close()
+	return
 
 
 def load_buffers_from_file(file):
+	'''
+	Loads the friction and topography buffers from a MiFile object.
+	Cycles through the buffers in the MiFile object and appends the friction and topography buffers to separate lists, ingoring the other buffers.
+	
+	Parameters
+	----------
+	file: agilent_loader.MiFile
+		The MiFile object to load the buffers from
+	
+	'''
 	friction_arrays=[]
 	topography_arrays=[]
 
@@ -199,7 +271,22 @@ def load_buffers_from_file(file):
 
 	return friction_arrays,topography_arrays
 
-def calculate_CoF(friction_array,file_path):
+
+
+
+def calculate_CoF(friction_array: list[np.ndarray],file_path: str):
+	'''
+	Calculates the coefficient of friction for the cycles over a sample, returns the averaged CoF, the mean and the standard deviation of the CoF.
+
+	Parameters
+	----------
+	friction_array: list[np.ndarray]
+		List of arrays of friction data
+	file_path: str
+		The path to the file to be processed
+
+	'''
+	
 	if len(friction_array)==2:
 
 		averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5
@@ -208,6 +295,8 @@ def calculate_CoF(friction_array,file_path):
 		return averaged_friction,friction_mean,friction_std
 
 	else:
-		warnings.warn(f"{file_path} doesnt contain both trace and retrace friction chunks\nExpected 2 friction arrays, got %d" % len(friction_arrays)+f" with file {file_path}")
+		warnings.warn(f"{file_path} doesnt contain both trace and retrace friction chunks\nExpected 2 friction arrays, got %d" % len(friction_array)+f" with file {file_path}")
 		
-		return 
+		raise Exception(f"{file_path} doesnt contain both trace and retrace friction chunks\nExpected 2 friction arrays, got %d" % len(friction_array)+f" with file {file_path}\n "+
+				  "the most likly culpurit is a spectroscopy file. Please check the file and try again")
+		

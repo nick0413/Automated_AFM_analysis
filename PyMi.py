@@ -129,7 +129,7 @@ def get_mi_files_in_folder(folder):
 	return files_in_folder
 
 
-def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5), show=False):
+def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5), scale_factor=1e6, scale_length=1, show=False):
 	'''
 	Plots the friction and topography data of a MiFile object and saves the plot to a file.
 	plots both friction and topography data on the same plot with respective colorbars and no axis labels, 
@@ -159,7 +159,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	'''
 	fig,ax=plt.subplots(1,2,figsize=aspect_ratio,dpi=resolution)
 
-	file= center_sample(file)
+	file= center_sample(file, scale_factor)
 	topography=topography*1e9
 	
 	fit_topology, _ = fit_image_to_polynomial(topography, 2)
@@ -172,13 +172,14 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	ax[0].set_xticks([])
 	ax[0].set_yticks([])
 
+	print("graphing topography")
 
 	ax[1].set_title('Topography')
 	ax[1].set_xticks([])
 	ax[1].set_yticks([])
 
-	scale_length_um = 1
-	x_pad=0.9
+	scale_length_um = scale_length
+	x_pad=0.85
 	y_pad=0.1
 	x_low=file.extent[1]*x_pad
 	y_low=file.extent[3]*y_pad
@@ -199,25 +200,39 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	cbar2.set_label("Height $[ nm]$")
 
 	plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
-	plt.savefig(results_folder+f"\\Friction_force_and_topography_{file_path}.png")
 	if show:
+		print("showing")
 		plt.show()
+		
+	plt.savefig(results_folder+f"\\Friction_force_and_topography_{file_path}.png")
+	
 	plt.clf()
 	plt.close()
 
-def center_sample(file):
+def center_sample(file, scale_factor=1e6):
 	'''
 	turns the lower left corner of the sample to (0,0) and shits the extent accordingly
+	Also changes the units from m to arbitrary units given a scale factor
 	
 	Parameters
 	----------
 	file: agilent_loader.MiFile
 		The MiFile object to be centered
+	scale_factor: float
+		The scale factor to change the units to arbitrary units, it change the scale in the way of 
+		new extent = old extent * scale_factor
+
+	
 	'''
 	file.extent[1]=file.extent[1]-file.extent[0]
 	file.extent[0]=0
 	file.extent[3]=file.extent[3]-file.extent[2]
 	file.extent[2]=0
+
+	file.extent[0]=file.extent[0]*scale_factor
+	file.extent[1]=file.extent[1]*scale_factor
+	file.extent[2]=file.extent[2]*scale_factor
+	file.extent[3]=file.extent[3]*scale_factor
 	return file
 
 
@@ -271,9 +286,6 @@ def load_buffers_from_file(file):
 
 	return friction_arrays,topography_arrays
 
-
-
-
 def calculate_CoF(friction_array: list[np.ndarray],file_path: str):
 	'''
 	Calculates the coefficient of friction for the cycles over a sample, returns the averaged CoF, the mean and the standard deviation of the CoF.
@@ -300,3 +312,6 @@ def calculate_CoF(friction_array: list[np.ndarray],file_path: str):
 		raise Exception(f"{file_path} doesnt contain both trace and retrace friction chunks\nExpected 2 friction arrays, got %d" % len(friction_array)+f" with file {file_path}\n "+
 				  "the most likly culpurit is a spectroscopy file. Please check the file and try again")
 		
+
+
+

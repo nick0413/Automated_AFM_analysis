@@ -75,12 +75,8 @@ def get_data(file_path: str, num_rows: int=500, graph=False)->pd.DataFrame:
 		xpos= data['x-Position'].to_numpy()
 		first_zero_index = find_first_zero(xpos)
 		last_zero_index = find_last_zero(xpos)
-		# print(f"{file_path}\tfirst and last zeroes {first_zero_index},{last_zero_index}\tRemoved {xpos.shape[0]-last_zero_index+first_zero_index} data points")	
 		data = data.iloc[first_zero_index:last_zero_index+10]
-		# if type(num_rows) != int and num_rows != 'all':
-		# 	raise ValueError("num_rows must be an integer or a named value like 'all'")
-		
-		# data = data[data['x-Position'] >= 0].head(num_rows)
+
 		xpos = data['x-Position'].to_numpy()
 		Fx= data['Fx'].to_numpy()
 		Fz= data['Fz'].to_numpy()

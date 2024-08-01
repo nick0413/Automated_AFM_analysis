@@ -16,13 +16,15 @@ class FTIR_file:
         self.columns = self.data.columns
 
 def main():
-    folder = 'Tribometer_data\\FTIR Origin Analysis\\vinay'
+    folder = 'Tribometer_data\\FTIR Origin Analysis\\vinay_1'
+    folder_name = os.path.basename(folder)
     # Read data from a file
     files_in_folder = os.listdir(folder)
     print(files_in_folder)
     FTIR_files = [FTIR_file(file, folder) for file in files_in_folder if file.endswith('.csv')]
     print(f'Found {len(FTIR_files)} csv files in the folder: {folder}.')
-    print(check_data(FTIR_files).to_string())
+    check_data(FTIR_files).to_excel(f'{folder}.xlsx', index=False)
+    print('Program Finished')
 
 
 def check_data(object_list:list): #TODO fix object list instances
@@ -37,20 +39,31 @@ def check_data(object_list:list): #TODO fix object list instances
             column_names += f'{count+1}: {column} \n'
         
         reference_column_name = set_checker[0][ref_col_input(column_names, column_name_length)-1]
+        print(f'X-axis column is: {reference_column_name}')
     else:
         raise ValueError(f'Columns in files are not the same: {set_checker}')
 
     print(f'Checking if x-axis column values in files are the same or if one is a subset of the other...')
-    first_df = object_list[0].data
+    
+    first_df = object_list[0].data[reference_column_name]
 
+    starting_test_val = True
     for df in object_list[1:]:
-        if not first_df.equals(df.data):
-            print(f'Files do not have the same x-axis values')
+        if not first_df.equals(df.data[reference_column_name]):
+            starting_test_val = False
         else:
-            print(f'Files have the same x-axis values')
+            continue
+    if starting_test_val == True:
+        print(f'X-axis column values are all the same in all files.')
+    else:
+        print('X-axis column values are not the same in all files.')
+    
+    for obj in object_list:
+        obj.data = obj.data.rename(columns={'Intensity': obj.file_name.split('.')[0]}) #TODO make this more generalized
+
     if status_input():
         print('Proceeding with analysis...')
-        intersecting_dataframe = reduce(lambda left, right: pd.merge(left, right, on=list(left.columns), how='inner'), [object.data for object in object_list])
+        intersecting_dataframe = reduce(lambda left, right: pd.merge(left, right, on=reference_column_name, how='inner'), [object.data for object in object_list]).dropna()
         return intersecting_dataframe
     else:
         print('Exiting program...')
@@ -59,7 +72,7 @@ def check_data(object_list:list): #TODO fix object list instances
 
 
 def ref_col_input(column_names:str, col_names_len:int):
-    reference_column = input(f'Which column is the x-axis column? Input integer value please: \n {column_names}')
+    reference_column = input(f'Which column is the x-axis column? Input integer value please: \n{column_names}')
     if reference_column.isnumeric() and int(reference_column) <= col_names_len:
         return int(reference_column)
     else:

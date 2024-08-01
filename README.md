@@ -1,5 +1,7 @@
 # Automated AFM analysis
 
+Is a work in progress module that allows for easy python manipulation of the data gathered by the Agilent AFM and the tribometer used in the  
+
 ## Install guide
 
 Depending on your use case you may have different requirements, but in general your requirements should look like this:
@@ -74,11 +76,22 @@ pip install scipy
 ```
 
 Also you will need to download the files:
-* tribo.py
-* PyMi.py 
-* agilent_loader.py
+* ```tribo.py```
+* ```PyMi.py ```
+* ```agilent_loader.py```
 
 
 Now you should be ready to go. 
+
+## Use Guide 
+
+The ```agilent_loader.py``` code you will find in this repository is a modified version of code written on [this github](https://gitlab.gwdg.de/lambert/agilent-mi-python-loader). We corrected the code to work with NxM scan sizes, as the code found on this repo used to only work for NxN scans (our changes where also applied to the code on that repo).
+
+
+This is the base for using analyzing the AFM ```.mi``` files. For ease of 
+
+
+
+
 ## References 
-Got .mi code from [this github](https://gitlab.gwdg.de/lambert/agilent-mi-python-loader)
+Code from [this github](https://gitlab.gwdg.de/lambert/agilent-mi-python-loader) was used in the building of this repo. 

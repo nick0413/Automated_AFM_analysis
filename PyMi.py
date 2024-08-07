@@ -129,7 +129,7 @@ def get_mi_files_in_folder(folder):
 	return files_in_folder
 
 
-def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5), scale_factor=1e6, scale_length=1, show=False):
+def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5),poly_degree=2 , scale_factor=1e6, scale_length=1,friction_color_range=2, show=False):
 	'''
 	Plots the friction and topography data of a MiFile object and saves the plot to a file.
 	plots both friction and topography data on the same plot with respective colorbars and no axis labels, 
@@ -162,7 +162,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	file= center_sample(file, scale_factor)
 	topography=topography*1e9
 	
-	fit_topology, _ = fit_image_to_polynomial(topography, 2)
+	fit_topology, _ = fit_image_to_polynomial(topography, poly_degree)
 	topography=topography-fit_topology
 
 	im1=ax[0].imshow(averaged_friction, cmap='inferno', extent=file.extent)
@@ -193,9 +193,14 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	ax[1].add_line(scale_bar2)
 	ax[1].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
 
+	friction_std=np.std(averaged_friction)
+	average_friction_value=np.average(averaged_friction)
+
+	im1.set_clim(vmin=average_friction_value-friction_color_range*friction_std, vmax=average_friction_value+friction_color_range*friction_std)
 
 	cbar1=fig.colorbar(im1,ax=ax[0],fraction=0.046, pad=0.04)
 	cbar2=fig.colorbar(im2,ax=ax[1],fraction=0.046, pad=0.04)
+	
 	cbar1.set_label("Friction force [V]")
 	cbar2.set_label("Height $[ nm]$")
 
@@ -205,9 +210,106 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 		plt.show()
 		
 	plt.savefig(results_folder+f"\\Friction_force_and_topography_{file_path}.png")
-	
+	#jhvedlkbnedfvljefbv
 	plt.clf()
 	plt.close()
+
+def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray, current: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5),poly_degree=2 , scale_factor=1e6, scale_length=1,friction_color_range=2, show=False):
+	'''
+	Plots the friction and topography data of a MiFile object and saves the plot to a file.
+	plots both friction and topography data on the same plot with respective colorbars and no axis labels, 
+	using the extent of the MiFile object as the plot limits and a scale bar of 1 um.
+
+	Parameters
+	----------
+	file: agilent_loader.MiFile
+		The MiFile object to be plotted
+	friction: np.ndarray
+		2D array of friction data
+	topography: np.ndarray
+		2D array of topography data
+	results_folder: str
+		The folder to save the results
+	file_path: str	
+		The name of the file to be saved
+	title: str
+		The title of the plot
+	resolution: int
+		The resolution of the plot
+	aspect_ratio: tuple
+		The aspect ratio of the plot
+	show: bool
+		Whether or not to show the plot
+
+	'''
+	fig,ax=plt.subplots(1,3,figsize=aspect_ratio,dpi=resolution)
+
+	file= center_sample(file, scale_factor)
+	topography=topography*1e9
+	
+	fit_topology, _ = fit_image_to_polynomial(topography, poly_degree)
+	topography=topography-fit_topology
+	topography=topography-np.min(topography)
+
+	im1=ax[0].imshow(averaged_friction, cmap='inferno', extent=file.extent)
+	im2=ax[1].imshow(topography, cmap='inferno', extent=file.extent)
+	im3=ax[2].imshow(current,cmap='inferno', extent=file.extent)
+	
+	ax[0].set_title(f'Friction avg: {np.average(averaged_friction):.4f}')
+	ax[0].set_xticks([])
+	ax[0].set_yticks([])
+
+	print("graphing topography")
+
+	ax[1].set_title('Topography')
+	ax[1].set_xticks([])
+	ax[1].set_yticks([])
+
+	ax[2].set_title(f'Current avg: {np.average(current):4f}')
+	ax[2].set_xticks([])
+	ax[2].set_yticks([])
+
+	scale_length_um = scale_length
+	x_pad=0.85
+	y_pad=0.1
+	x_low=file.extent[1]*x_pad
+	y_low=file.extent[3]*y_pad
+
+
+	scale_bar1 = Line2D([x_low, x_low+ scale_length_um], [y_low,y_low], color='white', linewidth=3)
+	scale_bar2 = Line2D([x_low, x_low+ scale_length_um], [y_low,y_low], color='white', linewidth=3)
+	scale_bar3 = Line2D([x_low, x_low+ scale_length_um], [y_low,y_low], color='white', linewidth=3)
+
+	ax[0].add_line(scale_bar1)
+	ax[0].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
+	ax[1].add_line(scale_bar2)
+	ax[1].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
+	ax[2].add_line(scale_bar3)
+	ax[2].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
+	
+
+	friction_std=np.std(averaged_friction)
+	average_friction_value=np.average(averaged_friction)
+
+	im1.set_clim(vmin=average_friction_value-friction_color_range*friction_std, vmax=average_friction_value+friction_color_range*friction_std)
+
+	cbar1=fig.colorbar(im1,ax=ax[0],fraction=0.046, pad=0.04)
+	cbar2=fig.colorbar(im2,ax=ax[1],fraction=0.046, pad=0.04)
+	cbar3=fig.colorbar(im3,ax=ax[2],fraction=0.046, pad=0.04)
+
+	cbar1.set_label("Friction force [V]")
+	cbar2.set_label("Height $[ nm]$")
+
+	plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
+	if show:
+		print("showing")
+		plt.show()
+		
+	plt.savefig(results_folder+f"\\Friction_force_and_topography_{file_path}.png")
+	#jhvedlkbnedfvljefbv
+	plt.clf()
+	plt.close()
+
 
 def center_sample(file, scale_factor=1e6):
 	'''
@@ -275,6 +377,10 @@ def load_buffers_from_file(file):
 	'''
 	friction_arrays=[]
 	topography_arrays=[]
+	current_arrays=[]
+
+	results=[]
+
 
 	for buffer in file.buffers:
 		
@@ -284,7 +390,19 @@ def load_buffers_from_file(file):
 		elif buffer.bufferLabel == "Topography":
 			topography_arrays.append(buffer.data)
 
-	return friction_arrays,topography_arrays
+		elif buffer.bufferLabel == "CSAFM/Aux_BNC":
+			current_arrays.append(buffer.data)
+		
+	if friction_arrays:
+		results.append(friction_arrays)
+	if topography_arrays:
+		results.append(topography_arrays)
+	if current_arrays:
+		results.append(current_arrays)
+
+
+
+	return results
 
 def calculate_CoF(friction_array: list[np.ndarray],file_path: str):
 	'''

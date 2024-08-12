@@ -46,7 +46,7 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
     # print(excel_report_name)
 
     for root, dirs, files in os.walk(folder_path):
-        if not files or dirs:
+        if not files or dirs: # TODO fix this conditional (issue with the dirs)
             continue
         avg_std_sample = pd.DataFrame(columns=['File Name', 'Ut', 'Ur', 'Ue']) #TODO this line was used before
         # print(f'This is the file list: {files}')

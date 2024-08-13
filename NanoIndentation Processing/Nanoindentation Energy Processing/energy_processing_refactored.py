@@ -28,7 +28,8 @@ def raw_or_excel():
     first_input = get_user_input('Do you want to process raw data or data from an excel file? (raw/excel): ', ['raw', 'excel']) # calls get user input function
     if first_input == 'raw': # if the user chooses to process raw data
         #---------------------------MARK: Data Files--------------------
-        raw_files_folder_path = 'C:\\Users\\alber\\OneDrive - University of Calgary\\2024Tribometer\\NanoIndentation\\Vinay NanoIndentation Data'
+        raw_files_folder_path = input('Please enter the path to the folder containing the raw data files: ') # prompt the user for the path to the folder containing the raw data files
+        # raw_files_folder_path = 'C:\\Users\\alber\\OneDrive - University of Calgary\\2024Tribometer\\NanoIndentation\\Vinay NanoIndentation Data' # can also modify to make it so that the user can code the path in without interfacing with the terminal
         raw_data_processing(raw_files_folder_path) # call the raw data processing function
     elif first_input == 'excel': # if the user chooses to process data from an excel file
         excel_path = input('Please enter the path to the excel file: ') # prompt the user for the path to the excel file
@@ -69,7 +70,7 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
             files_in_folder.append(file) # appends the file to the list <-- to be used for counting the number of files in the folder
             file_path = os.path.join(root, file) # joins the root and file to obtain the file's specific path
             # print(f'Processing {file_path}')
-            path_components = file_path.split('\\') # splits the file path by the backslash (works on windows computers)
+            path_components = file_path.split(os.path.sep) # splits the file path by the backslash (works on windows computers)
             if len(path_components) < 2: # if there are not enough components for a second-to-last folder
                 print('There has been an error with the path. Please ensure that the sample\'s name is the name of a subfolder.') # print an error message
                 exit()  # Exits the program to prevent further errors
@@ -157,56 +158,56 @@ def excel_output(avg_std_sample_dict: dict, avg_std_output: pd.DataFrame, folder
         avg_std_output.to_excel(writer, sheet_name='Average Ut Ur Ue', index=False) # exports the avg_std_output dataframe to an excel sheet
 
 #-------------------------------MARK: Disregard-----------------------------
-def old_main():
-    max_data = pd.DataFrame(columns=['Sample', 'Depth @ Max Load (nm)', 'Max Load (µN)', 'Max Indent Depth (nm)', 'Load @ Max Indent Depth (µN)']) # include in final excel file
-    discrete_energy = pd.DataFrame(columns=['Sample', 'Ut', 'Ur', 'Ue']) # include in final excel file
+# def old_main():
+#     max_data = pd.DataFrame(columns=['Sample', 'Depth @ Max Load (nm)', 'Max Load (µN)', 'Max Indent Depth (nm)', 'Load @ Max Indent Depth (µN)']) # include in final excel file
+#     discrete_energy = pd.DataFrame(columns=['Sample', 'Ut', 'Ur', 'Ue']) # include in final excel file
 
-    if average_or_multiple() == 'y': # TODO FINISH THIS
-        # need to integrate all the test columns and then take average and std of the Ut, Ur, Ue values
-        complete_data = avg_std_data_excel('NanoIndentation Processing\\Nanoindentation Energy Processing\\Energy Ph Curve.xlsx') # Dictionary storing all the sheet names as keys and dataframes as values
-        # plt.figure()
-        avg_std_output = pd.DataFrame(columns=['Sample', 'Ut', 'Ut STD', 'Ur', 'Ur STD', 'Ue', 'Ue STD'])
-        avg_std_sample_dict = {}
-        for (sample, dataframe) in complete_data.items():
-            test_numbers = list(set(dataframe.columns.get_level_values(0)))
-            avg_std_sample = pd.DataFrame(columns=['Test No.', 'Ut', 'Ur', 'Ue'])
-            for count, test in enumerate(test_numbers):                
-                if test == 'Test 1':
-                    # plt.plot(dataframe[test]['Depth (nm)'], dataframe[test]['Load (µN)'], label=f'{sample} Test {test}')
-                    # plt.plot(dataframe[test]['Depth (nm)'], dataframe[test]['Load (µN)'], label=f'{sample} Test {test} Negs')
-                    avg_std_sample.loc[count] = [test, *discrete_integration(dataframe[test], True, sample)]
-                else:
-                    avg_std_sample.loc[count] = [test, *discrete_integration(dataframe[test])]
+#     if average_or_multiple() == 'y': # TODO FINISH THIS
+#         # need to integrate all the test columns and then take average and std of the Ut, Ur, Ue values
+#         complete_data = avg_std_data_excel('NanoIndentation Processing\\Nanoindentation Energy Processing\\Energy Ph Curve.xlsx') # Dictionary storing all the sheet names as keys and dataframes as values
+#         # plt.figure()
+#         avg_std_output = pd.DataFrame(columns=['Sample', 'Ut', 'Ut STD', 'Ur', 'Ur STD', 'Ue', 'Ue STD'])
+#         avg_std_sample_dict = {}
+#         for (sample, dataframe) in complete_data.items():
+#             test_numbers = list(set(dataframe.columns.get_level_values(0)))
+#             avg_std_sample = pd.DataFrame(columns=['Test No.', 'Ut', 'Ur', 'Ue'])
+#             for count, test in enumerate(test_numbers):                
+#                 if test == 'Test 1':
+#                     # plt.plot(dataframe[test]['Depth (nm)'], dataframe[test]['Load (µN)'], label=f'{sample} Test {test}')
+#                     # plt.plot(dataframe[test]['Depth (nm)'], dataframe[test]['Load (µN)'], label=f'{sample} Test {test} Negs')
+#                     avg_std_sample.loc[count] = [test, *discrete_integration(dataframe[test], True, sample)]
+#                 else:
+#                     avg_std_sample.loc[count] = [test, *discrete_integration(dataframe[test])]
                 
 
-            avg_std_sample['Test No. Num'] = avg_std_sample['Test No.'].str.extract('(\d+)').astype(int)
-            avg_std_sample = avg_std_sample.sort_values(by='Test No. Num').drop(columns='Test No. Num')
-            avg_std_sample_dict[sample] = avg_std_sample
-            avg_std_output.loc[len(avg_std_output)] = [sample, avg_std_sample['Ut'].mean(), avg_std_sample['Ut'].std(), avg_std_sample['Ur'].mean(), avg_std_sample['Ur'].std(), avg_std_sample['Ue'].mean(), avg_std_sample['Ue'].std()]
-        # plt.legend()
-        # plt.show()
-        with pd.ExcelWriter('NanoIndentation Processing\\Nanoindentation Energy Processing\\Average Ut Ur Ue.xlsx') as writer:
-            for (sample, dataframe) in avg_std_sample_dict.items():
-                dataframe.to_excel(writer, sheet_name=sample, index=False)
-            avg_std_output.to_excel(writer, sheet_name='Average Ut Ur Ue', index=False)    
-        print(avg_std_output.to_string())
-        exit() #Todo: to be implemented
+#             avg_std_sample['Test No. Num'] = avg_std_sample['Test No.'].str.extract('(\d+)').astype(int)
+#             avg_std_sample = avg_std_sample.sort_values(by='Test No. Num').drop(columns='Test No. Num')
+#             avg_std_sample_dict[sample] = avg_std_sample
+#             avg_std_output.loc[len(avg_std_output)] = [sample, avg_std_sample['Ut'].mean(), avg_std_sample['Ut'].std(), avg_std_sample['Ur'].mean(), avg_std_sample['Ur'].std(), avg_std_sample['Ue'].mean(), avg_std_sample['Ue'].std()]
+#         # plt.legend()
+#         # plt.show()
+#         with pd.ExcelWriter('NanoIndentation Processing\\Nanoindentation Energy Processing\\Average Ut Ur Ue.xlsx') as writer:
+#             for (sample, dataframe) in avg_std_sample_dict.items():
+#                 dataframe.to_excel(writer, sheet_name=sample, index=False)
+#             avg_std_output.to_excel(writer, sheet_name='Average Ut Ur Ue', index=False)    
+#         print(avg_std_output.to_string())
+#         exit() #Todo: to be implemented
 
-    excel_df = load_avg_test_data('NanoIndentation Processing\\Nanoindentation Energy Processing\\Average Ph Curve.xlsx')
-    super_columns_list = list(set(excel_df.columns.get_level_values(0)))
+#     excel_df = load_avg_test_data('NanoIndentation Processing\\Nanoindentation Energy Processing\\Average Ph Curve.xlsx')
+#     super_columns_list = list(set(excel_df.columns.get_level_values(0)))
 
-    for count, sample in enumerate(super_columns_list): #TODO: make this into a function!!!
-        excel_df[sample] = excel_df[sample].map(lambda x: x if x >= 0 else None)
-        load_data = excel_df[sample]['Load (µN)']
-        depth_data = excel_df[sample]['Depth (nm)']
-        max_data.loc[count] = [sample, depth_data[load_data.idxmax()], load_data.max(), depth_data.max(), load_data[depth_data.idxmax()]]
-        discrete_energy.loc[count] = [sample, *discrete_integration(excel_df[sample])]
-        #depth_data.max() is the max depth 
-    # print(max_data.to_string())
-    discrete_energy = discrete_energy.sort_values(by='Sample')
-    print(discrete_energy.to_string())
-        # loading_data.loc[count] = [sample, *fit_data(loading_function, excel_df[sample], max_data.iloc[count][3])] #TODO: Add the final Ut value
-        # unloading_data.loc[count] = [sample, *fit_data(unloading_function, excel_df[sample], max_data.iloc[count][3])] #TODO: Add the final Ur value
+#     for count, sample in enumerate(super_columns_list): #TODO: make this into a function!!!
+#         excel_df[sample] = excel_df[sample].map(lambda x: x if x >= 0 else None)
+#         load_data = excel_df[sample]['Load (µN)']
+#         depth_data = excel_df[sample]['Depth (nm)']
+#         max_data.loc[count] = [sample, depth_data[load_data.idxmax()], load_data.max(), depth_data.max(), load_data[depth_data.idxmax()]]
+#         discrete_energy.loc[count] = [sample, *discrete_integration(excel_df[sample])]
+#         #depth_data.max() is the max depth 
+#     # print(max_data.to_string())
+#     discrete_energy = discrete_energy.sort_values(by='Sample')
+#     print(discrete_energy.to_string())
+#         # loading_data.loc[count] = [sample, *fit_data(loading_function, excel_df[sample], max_data.iloc[count][3])] #TODO: Add the final Ut value
+#         # unloading_data.loc[count] = [sample, *fit_data(unloading_function, excel_df[sample], max_data.iloc[count][3])] #TODO: Add the final Ur value
 
 #-------------------------------MARK: Disregard END-----------------------------
 

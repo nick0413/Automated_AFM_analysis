@@ -26,10 +26,10 @@ def raw_or_excel():
     This user input is the first input the user will provide."""
 
     first_input = get_user_input('Do you want to process raw data or data from an excel file? (raw/excel): ', ['raw', 'excel']) # calls get user input function
-    file_path = '' # initialize the file path variable
     if first_input == 'raw': # if the user chooses to process raw data
         #---------------------------MARK: Data Files--------------------
-        raw_data_processing('C:\\Users\\alber\\OneDrive - University of Calgary\\2024Tribometer\\NanoIndentation\\Vinay NanoIndentation Data') # call the raw data processing function #TODO: Change the add path as a param
+        raw_files_folder_path = 'C:\\Users\\alber\\OneDrive - University of Calgary\\2024Tribometer\\NanoIndentation\\Vinay NanoIndentation Data'
+        raw_data_processing(raw_files_folder_path) # call the raw data processing function
     elif first_input == 'excel': # if the user chooses to process data from an excel file
         excel_path = input('Please enter the path to the excel file: ') # prompt the user for the path to the excel file
         excel_data_processing(excel_path, average_or_multiple()) # TODO make a function called excel processing # call the excel data processing function
@@ -61,7 +61,7 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
     # print(excel_report_name)
 
     for root, dirs, files in os.walk(folder_path): # iterates through the folder path
-        if not files: # if there are no files in the folder
+        if not files or dirs: # if there are no files in the folder or if there are subdirectories
             continue # continue to the next iteration
         avg_std_sample = pd.DataFrame(columns=['File Name', 'Ut', 'Ur', 'Ue']) # used for storing the Ut, Ur, Ue values of each file
         # print(f'This is the file list: {files}')
@@ -150,7 +150,7 @@ def excel_output(avg_std_sample_dict: dict, avg_std_output: pd.DataFrame, folder
     if specific_name: # if a specific name is provided, implicit boolean check
         excel_report_name = specific_name # set the excel report name to the specific name
 
-    with pd.ExcelWriter(f'{folder_path}\\{excel_report_name}.xlsx') as writer: # creates an excel writer object
+    with pd.ExcelWriter(f'{folder_path}\\{excel_report_name} Refactored.xlsx') as writer: # creates an excel writer object
         if avg_std_sample_dict: # if the avg_std_sample_dict is not empty
             for (sample, dataframe) in avg_std_sample_dict.items(): # iterates through the avg_std_sample_dict dictionary
                 dataframe.to_excel(writer, sheet_name=sample, index=False) # exports the dataframe within the dictionary to an excel sheet
@@ -365,4 +365,4 @@ def main():
     raw_or_excel() # call the raw_or_excel function to process the raw data or data from an excel file
 
 if __name__ == '__main__':
-    raw_data_processing('C:\\Users\\alber\\OneDrive - University of Calgary\\2024Tribometer\\NanoIndentation\\Vinay NanoIndentation Data')
+    main()

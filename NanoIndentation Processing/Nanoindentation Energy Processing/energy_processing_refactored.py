@@ -91,7 +91,7 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
         avg_std_sample_dict[sample] = avg_std_sample # appends the avg_std_sample dataframe to the avg_std_sample_dict dictionary
         print(f'Processing {sample}') # prints the sample name
         avg_std_output.loc[len(avg_std_output)] = [sample, avg_std_sample['Ut'].mean(), avg_std_sample['Ut'].std(), avg_std_sample['Ur'].mean(), avg_std_sample['Ur'].std(), avg_std_sample['Ue'].mean(), avg_std_sample['Ue'].std()] # appends the average and std of the Ut, Ur, Ue values to the avg_std_output dataframe
-    print(avg_std_sample_dict) # prints the avg_std_sample_dict dictionary
+    # print(avg_std_sample_dict) # prints the avg_std_sample_dict dictionary
     print(avg_std_output.to_string()) # prints the avg_std_output dataframe
     print(f'Found {len(files_in_folder)} files in the folder')
     excel_output(avg_std_sample_dict, avg_std_output, folder_path) # calls the excel_output function

@@ -2,6 +2,10 @@ OA_Project_Oils/
 Al600-C20A/
 *.mi
 *.zip
+
+*.pdf
+*.tif
+*.jpg
 *.png
 *.xlsx
 *.csv

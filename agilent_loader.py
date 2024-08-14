@@ -158,7 +158,7 @@ def _load_mi_image(filename, allow_16_bit=False):
 		''' Convert the range and units of the buffer data '''
 		range_ = meta['buffers'][b]['bufferRange']
 		zFactor = range_ / (2.**31) # 32-1 - First bit is for sign!
-		conversions = dict(mV=1e-3, V=1, um=1e-6, deg=1)
+		conversions = dict(mV=1e-3, V=1, um=1e-6, deg=1, A=1e12)
 		unit = meta['buffers'][b]['bufferUnit']
 		zFactor *= conversions[unit]
 		meta['buffers'][b]['data'] = data * zFactor

@@ -1,4 +1,12 @@
 OA_Project_Oils/
+OA_Project_Tests_CoF/
+OA_Project_Tests_CoF_Images/
+PAO_IL_ZDDP_CoF/
+PAO_IL_ZDDP_CoF_Images/
+output.xlsx/
+OA_Project_Tests.xlsx/
+OA_Project_Tests_CoF_manualadditions.xlsx/
+PAO_IL_ZDDP_CoF_manualadditions.xlsx/
 Al600-C20A/
 *.mi
 *.zip

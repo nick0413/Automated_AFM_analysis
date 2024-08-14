@@ -6,7 +6,7 @@ import re
 import scipy.signal as signal
 import os
 
-# Refactored code
+# Refactored code finished
 
 '''
 	Tribo is a work in progress module that is designed to process tribology data from a tribometer.

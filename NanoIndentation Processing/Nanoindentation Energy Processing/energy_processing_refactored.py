@@ -43,7 +43,7 @@ def average_or_multiple():
         str: The user's input, either 'y' or 'n'.
     """
     
-    return get_user_input('Will you be inputting an excel file containing average data for multiple samples? (y/n): ', ['y', 'n'])
+    return get_user_input('Will you be inputting an excel file containing data for multiple samples? (y/n): ', ['y', 'n'])
 
 def raw_data_processing(folder_path: str) -> pd.DataFrame:
     """Processes raw data (.txt files) from a folder containing nanoindentation data.

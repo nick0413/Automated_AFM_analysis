@@ -6,6 +6,7 @@ import re
 import scipy.signal as signal
 import os
 
+# Refactored code
 
 '''
 	Tribo is a work in progress module that is designed to process tribology data from a tribometer.
@@ -104,7 +105,7 @@ def find_x_segments(xpos: np.ndarray):
 
 	Returns:
 	- Tuple[np.ndarray, np.ndarray]: Two arrays containing the indices of the peaks and valleys, respectively.
-		"""
+	"""
 	xpos_peaks, _ = signal.find_peaks(xpos)
 	xpos_valleys, _ = signal.find_peaks(-xpos) 
 	

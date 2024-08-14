@@ -1,4 +1,5 @@
-
+OA_Project_Oils/
+Al600-C20A/
 *.mi
 *.zip
 
@@ -6,3 +7,5 @@
 *.tif
 *.jpg
 *.png
+*.xlsx
+*.csv

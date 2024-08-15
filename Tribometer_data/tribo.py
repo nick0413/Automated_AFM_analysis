@@ -430,6 +430,7 @@ def plot_selecter(smoothed_df, folder):
 		
 
 		def handle_click(trace, points, selector):
+			# print(type(trace))
 			clicked=False
 			with output_widget:
 				output_widget.clear_output()  # Clear previous output
@@ -437,10 +438,16 @@ def plot_selecter(smoothed_df, folder):
 					selected_curve_name = trace.name
 					clicked=True
 
+					
+
 					if selected_curve_name not in selected_graphs_unique:
+						
 						selected_graphs_unique.append(selected_curve_name)
+						trace.line.dash='dot'
+
 					else:
 						selected_graphs_unique.remove(selected_curve_name)
+						trace.line.dash='solid'
 
 			if clicked:
 				print('Graphs Selected: ', selected_graphs_unique)

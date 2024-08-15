@@ -501,6 +501,25 @@ def plot_combinations_of_params(smoothed_df, folder):
 		plt.show()
 
 
+def new_output_good_tests(avg_CoF_tests, folder, sg_smoothing_df):
+	"""
+	Outputs the good tests from the given average coefficient of friction (CoF) tests.
+	Parameters:
+	- avg_CoF_tests (list): A dictionary containing the good tests from each of the combinations of parameters.
+	- folder (str): The folder name for which the good tests need to be extracted.
+	- sg_smoothing_df (pandas.DataFrame): The DataFrame containing the smoothed data.
+	Returns:
+	- None
+	Prints the good tests found in the specified folder and saves them to an Excel file.
+
+	Example usage:
+	output_good_tests(avg_CoF_tests, 'Folder1', sg_smoothing_df)
+	"""
+	good_tests_df = sg_smoothing_df[[avg_CoF_tests]].copy()
+	# print(good_tests_df)
+	with pd.ExcelWriter(f'{folder}.xlsx', engine='openpyxl', mode='a') as writer: 
+		good_tests_df.to_excel(writer, sheet_name='Good_Tests', index=False)
+
 
 def output_good_tests(avg_CoF_tests, folder, sg_smoothing_df):
 	"""
@@ -517,6 +536,9 @@ def output_good_tests(avg_CoF_tests, folder, sg_smoothing_df):
 	"""
 
 	print(avg_CoF_tests[folder], f'\n Length: {len(avg_CoF_tests[folder])}')
+	
+
+
 	count = 0
 	good_test_in_folder_list = []
 	for ii in range(len(sg_smoothing_df.columns)):

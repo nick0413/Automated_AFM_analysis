@@ -19,7 +19,10 @@ from IPython.display import display
 '''
 
 def split_string(s):
-    return re.split('[-_]', s)
+	s=re.sub(r"\.test", "_test", s)
+	split=re.split('[-_]', s)
+	# print(split)
+	return split
 
 labels = {
     "upward_sections": "Forward Movement CoF",
@@ -216,13 +219,14 @@ class Tribo_file:
 	def __init__(self,file_folder, file_name, outlier=False):
 		self.file_name = file_name
 		self.file_folder = file_folder
-		self.percent,self.name,self.force,self.speed,self.test = split_string(self.file_name)
+		self.percent,self.name,self.force,self.speed,self.date,self.test = split_string(self.file_name)
 		self.outlier=outlier
 		
 		self.load_data()
 
 	def load_data(self):
-		self.data,self.xpos,self.Fx,self.Fz = get_data(self.file_folder+"\\"+self.file_name,"all")
+		print(f"Loading {self.file_name}")
+		self.data,self.xpos,self.Fx,self.Fz = get_data(os.path.join(self.file_folder, self.file_name),"all")
 		
 
 	def process_data(self,cutoff=0.1):
@@ -258,6 +262,7 @@ def load_files(files_in_folder: list,folder: str,outlier_tests: list = []):
 			else:
 				file_n=Tribo_file(folder, file_name)
 		else:
+			print(file_name)
 			file_n=Tribo_file(folder, file_name)
 
 		file_n.process_data(0.2)
@@ -392,16 +397,16 @@ def get_unique_names(smoothed_df):
 	unique_names = {}  # Dictionary to store the unique names of the tests
 
 	for column in smoothed_df.columns: # Iterate over all the column names in the list of column names
-		if '10mms' in column: # Skip the column if it contains '10mms' in the name <-- we had considered it an invalid test
-			continue
-		if '20N' or '10N' in column:
-		# if '20N' in column:
+		# if '10mms' in column: # Skip the column if it contains '10mms' in the name <-- we had considered it an invalid test
+		# 	continue
+		# if '20N' or '10N' in column:
+		# # if '20N' in column:
 
-			unique_name = re.sub(pattern, '', column) # Apply the regex pattern to get the unique name
-			if unique_name in unique_names: # Check if the unique name is already a key in the dictionary
-				unique_names[unique_name].append(column) # Append the original column name to the list associated with the unique name
-			else:
-				unique_names[unique_name] = [column] # Create a new entry with the unique name as the key and a list containing the original column name
+		unique_name = re.sub(pattern, '', column) # Apply the regex pattern to get the unique name
+		if unique_name in unique_names: # Check if the unique name is already a key in the dictionary
+			unique_names[unique_name].append(column) # Append the original column name to the list associated with the unique name
+		else:
+			unique_names[unique_name] = [column] # Create a new entry with the unique name as the key and a list containing the original column name
 	return unique_names
 
 

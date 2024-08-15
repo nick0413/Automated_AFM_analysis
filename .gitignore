@@ -8,8 +8,10 @@ OA_Project_Tests.xlsx/
 OA_Project_Tests_CoF_manualadditions.xlsx/
 PAO_IL_ZDDP_CoF_manualadditions.xlsx/
 Al600-C20A/
+Tribometer_data\DATA\
 *.mi
 *.zip
 *.png
 *.pdf
 *.xlsx
+/Tribometer_data/DATA

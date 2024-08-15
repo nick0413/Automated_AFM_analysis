@@ -419,15 +419,15 @@ def plot_selecter(smoothed_df, folder):
 	selected_graphs_unique=[]
 
 
-	global clicked 
-	clicked=False
+	
 
 	for (key,value) in unique_names.items():
 		fig = go.FigureWidget()
 		for spec_val in value:
 			fig.add_scatter(x=np.arange(len(smoothed_df[spec_val])),y=smoothed_df[spec_val], name=str(spec_val))
 	
-		
+		global clicked 
+		clicked=False
 
 		def handle_click(trace, points, selector):
 			# print(type(trace))
@@ -477,7 +477,7 @@ def plot_selecter(smoothed_df, folder):
 
 		display(fig)
 
-		selected_graphs.append(selected_graphs_unique)
+		selected_graphs+=selected_graphs_unique
 
 
 	os.makedirs(f'{folder}_Images', exist_ok=True) # make a new directory to store the images if it doesn't already exist

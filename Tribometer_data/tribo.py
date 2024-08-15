@@ -5,8 +5,10 @@ from scipy.signal import savgol_filter
 import re
 import scipy.signal as signal
 import os
+import plotly.graph_objs as go
+import ipywidgets as widgets
+from IPython.display import display
 
-# Refactored code finished
 
 '''
 	Tribo is a work in progress module that is designed to process tribology data from a tribometer.
@@ -24,7 +26,6 @@ labels = {
     "downward_sections": "Downward Movement CoF",
     "forward_friction": "Forward Friction",
     "backward_friction": "Backward Friction",
-    # Add more labels as needed
 }
 
 def find_first_zero(xpos: np.ndarray)->int:
@@ -369,10 +370,9 @@ def cof_overlays(smoothed_df):
 	plt.show() # displays the graph
 
 
-def plot_combinations_of_params(smoothed_df, folder):
-	
-	"""
-	A function that plots a Coefficient of Friction vs Cycles graph for each combination of parameters of a sample in the dataframe.
+'''
+
+A function that plots a Coefficient of Friction vs Cycles graph for each combination of parameters of a sample in the dataframe.
 	:param smoothed_df: A pandas DataFrame containing the data for the tests.
 	:param folder: A string representing the folder path where the generated images will be saved.
 	:return: None
@@ -385,7 +385,9 @@ def plot_combinations_of_params(smoothed_df, folder):
     
     :param 
     """
+'''
 
+def get_unique_names(smoothed_df):
 	pattern = r'(_test|_Test).*' # Regex pattern to remove the test number from the column name
 	unique_names = {}  # Dictionary to store the unique names of the tests
 
@@ -400,18 +402,97 @@ def plot_combinations_of_params(smoothed_df, folder):
 				unique_names[unique_name].append(column) # Append the original column name to the list associated with the unique name
 			else:
 				unique_names[unique_name] = [column] # Create a new entry with the unique name as the key and a list containing the original column name
+	return unique_names
 
+
+
+
+
+
+def plot_selecter(smoothed_df, folder):
+	unique_names=get_unique_names(smoothed_df)
+	
+	output_widget = widgets.Output()
+
+	selected_graphs = []
+
+	selected_graphs_unique=[]
+
+
+	global clicked 
+	clicked=False
+
+	for (key,value) in unique_names.items():
+		fig = go.FigureWidget()
+		for spec_val in value:
+			fig.add_scatter(x=np.arange(len(smoothed_df[spec_val])),y=smoothed_df[spec_val], name=str(spec_val))
+	
+		
+
+		def handle_click(trace, points, selector):
+			clicked=False
+			with output_widget:
+				output_widget.clear_output()  # Clear previous output
+				if points.point_inds:  # Check if any point is clicked
+					selected_curve_name = trace.name
+					clicked=True
+
+					if selected_curve_name not in selected_graphs_unique:
+						selected_graphs_unique.append(selected_curve_name)
+					else:
+						selected_graphs_unique.remove(selected_curve_name)
+
+			if clicked:
+				print('Graphs Selected: ', selected_graphs_unique)
+				clicked=False
+			return selected_graphs_unique
+
+		def on_submit(b):
+			with output_widget:
+				print(f'Outlier Final Selection: {selected_graphs_unique}')
+
+		
+		display(output_widget)
+		for set in fig.data:
+			set.on_click(handle_click)
+
+
+		
+
+		submit_button = widgets.Button(description='Submit')
+		submit_button.on_click(on_submit)
+		display(submit_button)
+
+
+		
+
+		
+
+		display(fig)
+
+		selected_graphs.append(selected_graphs_unique)
+
+
+	os.makedirs(f'{folder}_Images', exist_ok=True) # make a new directory to store the images if it doesn't already exist
+
+	return selected_graphs
+
+
+
+def plot_combinations_of_params(smoothed_df, folder):
+	
+	unique_names=get_unique_names(smoothed_df)
 	os.makedirs(f'{folder}_Images', exist_ok=True) # make a new directory to store the images if it doesn't already exist
 
 	for (key, value) in unique_names.items(): # keys are the unique names which include sample name along with the specific combination of parameters
 		# values are the list of tests (repetitions) done on the same combination of parameters
 		for spec_val in value: # iterates through tests within the list of tests done on the same combination of parameters
 			plt.plot(smoothed_df[spec_val],label=spec_val) # plot the CoF values vs cycle number with the legend being the specific file name of the test
-		# plt.title(key)
+		
 		plt.legend() # includes legend in the graph
 		plt.savefig(os.path.join(f'{folder}_Images', f'{key}.png')) # saves the figure as the unique name in the previously created folder
-		plt.show() # displays the graph
-	# print(key, unique_names[key])
+		plt.show()
+
 
 
 def output_good_tests(avg_CoF_tests, folder, sg_smoothing_df):

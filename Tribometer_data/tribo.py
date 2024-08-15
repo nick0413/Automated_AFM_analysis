@@ -516,7 +516,7 @@ def new_output_good_tests(avg_CoF_tests, folder, sg_smoothing_df):
 	Example usage:
 	output_good_tests(avg_CoF_tests, 'Folder1', sg_smoothing_df)
 	"""
-	good_tests_df = sg_smoothing_df[[avg_CoF_tests]].copy()
+	good_tests_df = sg_smoothing_df[avg_CoF_tests].copy()
 	# print(good_tests_df)
 	with pd.ExcelWriter(f'{folder}.xlsx', engine='openpyxl', mode='a') as writer: 
 		good_tests_df.to_excel(writer, sheet_name='Good_Tests', index=False)

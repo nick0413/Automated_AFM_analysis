@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 from scipy import odr, integrate
 import os
 
+# create function, test one or random test per graph
+# create function to remove quotations from user input
+# create function to plot all tests of one sample on one graph
+
 def display_initial_message():
     """Displays the initial message to the user."""
     print('Welcome to the Nanoindentation Processing Program to calculate the total energy of the nanoindentation test.' \
@@ -28,8 +32,8 @@ def raw_or_excel():
     first_input = get_user_input('Do you want to process raw data or data from an excel file? (raw/excel): ', ['raw', 'excel']) # calls get user input function
     if first_input == 'raw': # if the user chooses to process raw data
         #---------------------------MARK: Data Files--------------------
-        raw_files_folder_path = input('Please enter the path to the folder containing the raw data files: ') # prompt the user for the path to the folder containing the raw data files
-        # raw_files_folder_path = 'C:\\Users\\alber\\OneDrive - University of Calgary\\2024Tribometer\\NanoIndentation\\Vinay NanoIndentation Data' # can also modify to make it so that the user can code the path in without interfacing with the terminal
+        # raw_files_folder_path = input('Please enter the path to the folder containing the raw data files: ') # prompt the user for the path to the folder containing the raw data files
+        raw_files_folder_path = 'C:\\Users\\alber\\OneDrive - University of Calgary\\2024Tribometer\\NanoIndentation\\Vinay NanoIndentation Data' # can also modify to make it so that the user can code the path in without interfacing with the terminal
         raw_data_processing(raw_files_folder_path) # call the raw data processing function
     elif first_input == 'excel': # if the user chooses to process data from an excel file
         excel_path = input('Please enter the path to the excel file: ') # prompt the user for the path to the excel file
@@ -77,6 +81,7 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
             sample = path_components[-2] # the second-to-last path component is the sample name as the file is within that sub-directory
             # Assuming the files are TXTs, you can read them into DataFrames
             if file.endswith('.txt'):
+                
                 #usecols=['Depth (nm)', 'Load (µN)'],
                 df = pd.read_csv(file_path, sep='\t', header=3, usecols=[0,1], encoding='utf-8') # Assuming the data is tab-separated, read the file into a dataframe
                 df.loc[-1] = df.columns # adding the column names to the -1st row
@@ -86,7 +91,12 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
                 # TODO add a check to see if the columns in the file are in the correct order, so that it is not hardcoded
                 # print(df.columns)
                 df = df.astype(float) # converting the columns to float (decimal numbers) types
+                plt.plot(df['Depth (nm)'], df['Load (µN)'], label=f'{sample} {file}') # plot the depth vs load curve
+                plt.legend() # show the legend
                 avg_std_sample.loc[count] = [file, *discrete_integration(df)] # appends the Ut, Ur, Ue values (obtained from trapezoidal integration) to the avg_std_sample dataframe
+        plt.show() # show the plot
+
+        #TODO fix this part
         
         avg_std_sample_dict[sample] = avg_std_sample # appends the avg_std_sample dataframe to the avg_std_sample_dict dictionary
         print(f'Processing {sample}') # prints the sample name
@@ -148,10 +158,12 @@ def excel_output(avg_std_sample_dict: dict, avg_std_output: pd.DataFrame, folder
     The excel file will be saved in the same folder path as the raw data."""
 
     excel_report_name = os.path.basename(folder_path) # used for naming the excel report
+    excel_report_name += ' Refactored' # add 'Refactored' to the excel report name
     if specific_name: # if a specific name is provided, implicit boolean check
         excel_report_name = specific_name # set the excel report name to the specific name
-
-    with pd.ExcelWriter(f'{folder_path}\\{excel_report_name} Refactored.xlsx') as writer: # creates an excel writer object
+        excel_report_name += ' Refactored' # add 'Refactored' to the excel report name
+    full_path = os.path.join(folder_path, f'{excel_report_name}.xlsx') # create the full path to the excel file
+    with pd.ExcelWriter(full_path) as writer: # creates an excel writer object
         if avg_std_sample_dict: # if the avg_std_sample_dict is not empty
             for (sample, dataframe) in avg_std_sample_dict.items(): # iterates through the avg_std_sample_dict dictionary
                 dataframe.to_excel(writer, sheet_name=sample, index=False) # exports the dataframe within the dictionary to an excel sheet
@@ -275,8 +287,8 @@ def discrete_integration(sub_dataframe:pd.DataFrame, test_one=False, sample=None
     Ut = integrate.trapezoid(filtered_df_Ut['Load (µN)'], filtered_df_Ut['Depth (nm)']) # total energy
     # print(sub_dataframe.iloc[hmax_index:].to_string())
     filtered_df_Ue = sub_dataframe.iloc[hmax_index:].iloc[::-1] # unloading curve data points filtered
-    plt.clf() # clear the plot
     if test_one: # if it is the first test <-- used mainly for testing purposes
+        plt.clf() # clear the plot
         plt.plot(filtered_df_Ut['Depth (nm)'],filtered_df_Ut['Load (µN)'], label=f'{sample} Test 1 Loading Curve') # plot the loading curve
         plt.plot( filtered_df_Ue['Depth (nm)'],filtered_df_Ue['Load (µN)'], label=f'{sample} Test 1 Unloading Curve') # plot the unloading curve
         plt.legend() # show the legend

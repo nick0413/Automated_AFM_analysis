@@ -246,12 +246,12 @@ class Tribo_file:
 
 		self.CoF_array=padded_array
 
-def load_files(files_in_folder: list,folder: str,outlier_tests: dict={}):
+def load_files(files_in_folder: list,folder: str,outlier_tests: list = []):
 	Tribo_files = []
 	complete_CoF_df = pd.DataFrame()
 	for file_name in files_in_folder:
 		if  outlier_tests:
-			if file_name in outlier_tests[folder]:
+			if file_name in outlier_tests:
 			
 				file_n=Tribo_file(folder, file_name, outlier=True)
 			
@@ -409,19 +409,20 @@ def get_unique_names(smoothed_df):
 
 
 
-def plot_selecter(smoothed_df, folder):
+def plot_selector(smoothed_df, folder,selected_graphs_unique, selection: str='outliers'):
 	unique_names=get_unique_names(smoothed_df)
 	
 	output_widget = widgets.Output()
 
-	selected_graphs = []
+	
 
-	selected_graphs_unique=[]
-
+	
+	selected_graphs=[]
 
 	
 
 	for (key,value) in unique_names.items():
+		# selected_graphs_unique=[]
 		fig = go.FigureWidget()
 		for spec_val in value:
 			fig.add_scatter(x=np.arange(len(smoothed_df[spec_val])),y=smoothed_df[spec_val], name=str(spec_val))
@@ -456,7 +457,7 @@ def plot_selecter(smoothed_df, folder):
 
 		def on_submit(b):
 			with output_widget:
-				print(f'Outlier Final Selection: {selected_graphs_unique}')
+				print(f'{selection} Final Selection: {selected_graphs_unique}')
 
 		
 		display(output_widget)

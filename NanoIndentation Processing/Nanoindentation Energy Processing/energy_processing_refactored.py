@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import odr, integrate
+import plotly.graph_objects as go
 import os
 
 # create function, test one or random test per graph
@@ -70,6 +71,8 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
             continue # continue to the next iteration
         avg_std_sample = pd.DataFrame(columns=['File Name', 'Ut', 'Ur', 'Ue']) # used for storing the Ut, Ur, Ue values of each file
         # print(f'This is the file list: {files}')
+
+        fig = go.Figure() # create a plotly figure
         for count, file in enumerate(files): # iterates through the files in the folder
             files_in_folder.append(file) # appends the file to the list <-- to be used for counting the number of files in the folder
             file_path = os.path.join(root, file) # joins the root and file to obtain the file's specific path
@@ -91,10 +94,22 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
                 # TODO add a check to see if the columns in the file are in the correct order, so that it is not hardcoded
                 # print(df.columns)
                 df = df.astype(float) # converting the columns to float (decimal numbers) types
-                plt.plot(df['Depth (nm)'], df['Load (µN)'], label=f'{sample} {file}') # plot the depth vs load curve
-                plt.legend() # show the legend
+                fig.add_trace(go.Scatter(x=df['Depth (nm)'], y=df['Load (µN)'], mode='lines', name=file))
+                # plt.plot(df['Depth (nm)'], df['Load (µN)'], label=f'{sample} {file}') # plot the depth vs load curve
+                # plt.legend() # show the legend
+
                 avg_std_sample.loc[count] = [file, *discrete_integration(df)] # appends the Ut, Ur, Ue values (obtained from trapezoidal integration) to the avg_std_sample dataframe
-        plt.show() # show the plot
+        
+        # Customize layout
+        fig.update_layout(
+            title=sample,
+            xaxis_title='Depth (nm)',
+            yaxis_title='Load (µN)')
+
+        # Show the figure
+        fig.show()
+        fig.data = []
+        # plt.show() # show the plot
 
         #TODO fix this part
         
@@ -169,60 +184,6 @@ def excel_output(avg_std_sample_dict: dict, avg_std_output: pd.DataFrame, folder
                 dataframe.to_excel(writer, sheet_name=sample, index=False) # exports the dataframe within the dictionary to an excel sheet
         avg_std_output.to_excel(writer, sheet_name='Average Ut Ur Ue', index=False) # exports the avg_std_output dataframe to an excel sheet
 
-#-------------------------------MARK: Disregard-----------------------------
-# def old_main():
-#     max_data = pd.DataFrame(columns=['Sample', 'Depth @ Max Load (nm)', 'Max Load (µN)', 'Max Indent Depth (nm)', 'Load @ Max Indent Depth (µN)']) # include in final excel file
-#     discrete_energy = pd.DataFrame(columns=['Sample', 'Ut', 'Ur', 'Ue']) # include in final excel file
-
-#     if average_or_multiple() == 'y': # TODO FINISH THIS
-#         # need to integrate all the test columns and then take average and std of the Ut, Ur, Ue values
-#         complete_data = avg_std_data_excel('NanoIndentation Processing\\Nanoindentation Energy Processing\\Energy Ph Curve.xlsx') # Dictionary storing all the sheet names as keys and dataframes as values
-#         # plt.figure()
-#         avg_std_output = pd.DataFrame(columns=['Sample', 'Ut', 'Ut STD', 'Ur', 'Ur STD', 'Ue', 'Ue STD'])
-#         avg_std_sample_dict = {}
-#         for (sample, dataframe) in complete_data.items():
-#             test_numbers = list(set(dataframe.columns.get_level_values(0)))
-#             avg_std_sample = pd.DataFrame(columns=['Test No.', 'Ut', 'Ur', 'Ue'])
-#             for count, test in enumerate(test_numbers):                
-#                 if test == 'Test 1':
-#                     # plt.plot(dataframe[test]['Depth (nm)'], dataframe[test]['Load (µN)'], label=f'{sample} Test {test}')
-#                     # plt.plot(dataframe[test]['Depth (nm)'], dataframe[test]['Load (µN)'], label=f'{sample} Test {test} Negs')
-#                     avg_std_sample.loc[count] = [test, *discrete_integration(dataframe[test], True, sample)]
-#                 else:
-#                     avg_std_sample.loc[count] = [test, *discrete_integration(dataframe[test])]
-                
-
-#             avg_std_sample['Test No. Num'] = avg_std_sample['Test No.'].str.extract('(\d+)').astype(int)
-#             avg_std_sample = avg_std_sample.sort_values(by='Test No. Num').drop(columns='Test No. Num')
-#             avg_std_sample_dict[sample] = avg_std_sample
-#             avg_std_output.loc[len(avg_std_output)] = [sample, avg_std_sample['Ut'].mean(), avg_std_sample['Ut'].std(), avg_std_sample['Ur'].mean(), avg_std_sample['Ur'].std(), avg_std_sample['Ue'].mean(), avg_std_sample['Ue'].std()]
-#         # plt.legend()
-#         # plt.show()
-#         with pd.ExcelWriter('NanoIndentation Processing\\Nanoindentation Energy Processing\\Average Ut Ur Ue.xlsx') as writer:
-#             for (sample, dataframe) in avg_std_sample_dict.items():
-#                 dataframe.to_excel(writer, sheet_name=sample, index=False)
-#             avg_std_output.to_excel(writer, sheet_name='Average Ut Ur Ue', index=False)    
-#         print(avg_std_output.to_string())
-#         exit() #Todo: to be implemented
-
-#     excel_df = load_avg_test_data('NanoIndentation Processing\\Nanoindentation Energy Processing\\Average Ph Curve.xlsx')
-#     super_columns_list = list(set(excel_df.columns.get_level_values(0)))
-
-#     for count, sample in enumerate(super_columns_list): #TODO: make this into a function!!!
-#         excel_df[sample] = excel_df[sample].map(lambda x: x if x >= 0 else None)
-#         load_data = excel_df[sample]['Load (µN)']
-#         depth_data = excel_df[sample]['Depth (nm)']
-#         max_data.loc[count] = [sample, depth_data[load_data.idxmax()], load_data.max(), depth_data.max(), load_data[depth_data.idxmax()]]
-#         discrete_energy.loc[count] = [sample, *discrete_integration(excel_df[sample])]
-#         #depth_data.max() is the max depth 
-#     # print(max_data.to_string())
-#     discrete_energy = discrete_energy.sort_values(by='Sample')
-#     print(discrete_energy.to_string())
-#         # loading_data.loc[count] = [sample, *fit_data(loading_function, excel_df[sample], max_data.iloc[count][3])] #TODO: Add the final Ut value
-#         # unloading_data.loc[count] = [sample, *fit_data(unloading_function, excel_df[sample], max_data.iloc[count][3])] #TODO: Add the final Ur value
-
-#-------------------------------MARK: Disregard END-----------------------------
-
 def load_avg_test_data(excel_file:str) -> pd.DataFrame:
     """
     Load and process average test data from an Excel file.
@@ -235,6 +196,7 @@ def load_avg_test_data(excel_file:str) -> pd.DataFrame:
     excel_data = pd.read_excel(excel_file, header=[0,1], sheet_name='All') # read the excel file into a dataframe
     excel_data = excel_data.dropna() # drop rows with NaN values
     return excel_data # return the processed data
+
 #------------------------------------------------------------#
 def avg_std_data_excel(excel_data:pd.DataFrame) -> pd.DataFrame:
     """

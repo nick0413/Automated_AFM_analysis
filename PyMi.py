@@ -130,7 +130,9 @@ def get_mi_files_in_folder(folder):
 
 
 
-def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5),poly_degree=2 , scale_factor=1e6, scale_length=1,friction_color_range=2, show=False,current=None):
+def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5),poly_degree=2 , scale_factor=1e6, scale_length=1,friction_color_range=2, show=False,current=None, bar_position=(0.8,0.1)):
+	
+	# print('1',scale_length)
 	'''
 	Plots the friction and topography data of a MiFile object and saves the plot to a file.
 	plots both friction and topography data on the same plot with respective colorbars and no axis labels, 
@@ -158,7 +160,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 		Whether or not to show the plot
 
 	'''
-
+	
 	if current is not None:
 
 		fig,ax=plt.subplots(1,3,figsize=aspect_ratio,dpi=resolution)
@@ -191,11 +193,12 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	ax[1].set_xticks([])
 	ax[1].set_yticks([])
 
-	
+	print('2',scale_length)
 
 	scale_length_um = scale_length
-	x_pad=0.85
-	y_pad=0.1
+	print(scale_length_um, 'scale length',scale_length)
+	x_pad=bar_position[0]
+	y_pad=bar_position[1]
 	x_low=file.extent[1]*x_pad
 	y_low=file.extent[3]*y_pad
 

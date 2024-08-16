@@ -324,7 +324,7 @@ def sort_dfs_by_speed(speeds: list, df: pd.DataFrame):
 
 	return speed_sheets
 
-def export_excel_results(speed_sheets_df,speeds,sg_smoothing_df,folder,complete_CoF,verbose: bool = False):
+def export_excel_results(speed_sheets_df,speeds,sg_smoothing_df,folder,complete_CoF, outlier_df:pd.DataFrame, verbose: bool = False):
 	with pd.ExcelWriter(f'{folder}.xlsx') as writer: 
 		total_dfs=[]
 		for df,speed  in zip(speed_sheets_df,speeds): 
@@ -358,6 +358,8 @@ def export_excel_results(speed_sheets_df,speeds,sg_smoothing_df,folder,complete_
 		complete_df.to_excel(writer, sheet_name='Total', index=False)
 		complete_CoF.to_excel(writer, sheet_name='CoF', index=True)
 		sg_smoothing_df.to_excel(writer, sheet_name='Smoothed CoF', index=True)
+		if not outlier_df.empty:
+			outlier_df.to_excel(writer, sheet_name='Outliers', index=False)
 
 
 def cof_overlays(smoothed_df):
@@ -526,6 +528,33 @@ def new_output_good_tests(avg_CoF_tests, folder, sg_smoothing_df):
 	# print(good_tests_df)
 	with pd.ExcelWriter(f'{folder}.xlsx', engine='openpyxl', mode='a') as writer: 
 		good_tests_df.to_excel(writer, sheet_name='Good_Tests', index=False)
+	return good_tests_df
+	
+def organize_good_tests(good_tests_df, folder):
+	user_input = get_user_input('Would you like to organize the good tests by speed or force? (s/f): ', ['s', 'f'])
+	good_test_columns = good_tests_df.columns # get the column names of the good tests DataFrame
+	parameter_unit = {'s': 'mms', 'f': 'N'}
+	unique_parameter_list = find_force_or_speed(good_test_columns, parameter_unit[user_input])
+	good_tests_params_dict = {}
+	for param in unique_parameter_list:
+		good_tests_params_dict[param] = good_tests_df.filter(like=param, axis=1) #TODO: filter the columns based on the parameter, see if works
+	
+	with pd.ExcelWriter(f'{folder}.xlsx', engine='openpyxl', mode='a') as writer: 
+		for param, param_df in good_tests_params_dict.items():
+			param_df.to_excel(writer, sheet_name=f'{param} Good Tests', index=False)
+
+def find_force_or_speed(columns_good_test, param_unit):
+	unique_param_list = []
+	for test_name in columns_good_test:
+		try:
+			match = re.search(rf'(\d+)({param_unit})', test_name) # search for the speed in the test name
+			parameter = match.group(0) # get the total speed from the match
+			if parameter not in unique_param_list: # check if the parameter is not already in the list of unique parameters
+				unique_param_list.append(parameter) # append the parameter to the list of unique parameters
+		except:
+			raise ValueError(f'Error: Parameter not found in test name: {test_name}. Please ensure correct naming convention is used.')
+	
+	return unique_param_list
 
 
 def output_good_tests(avg_CoF_tests, folder, sg_smoothing_df):

@@ -225,7 +225,7 @@ class Tribo_file:
 		self.load_data()
 
 	def load_data(self):
-		print(f"Loading {self.file_name}")
+		# print(f"Loading {self.file_name}")
 		self.data,self.xpos,self.Fx,self.Fz = get_data(os.path.join(self.file_folder, self.file_name),"all")
 		
 
@@ -262,7 +262,7 @@ def load_files(files_in_folder: list,folder: str,outlier_tests: list = []):
 			else:
 				file_n=Tribo_file(folder, file_name)
 		else:
-			print(file_name)
+			# print(file_name)
 			file_n=Tribo_file(folder, file_name)
 
 		file_n.process_data(0.2)
@@ -394,6 +394,7 @@ A function that plots a Coefficient of Friction vs Cycles graph for each combina
 
 def get_unique_names(smoothed_df):
 	pattern = r'(_test|_Test).*' # Regex pattern to remove the test number from the column name
+	pattern2 = r'_[^_]*$'
 	unique_names = {}  # Dictionary to store the unique names of the tests
 
 	for column in smoothed_df.columns: # Iterate over all the column names in the list of column names
@@ -402,7 +403,7 @@ def get_unique_names(smoothed_df):
 		# if '20N' or '10N' in column:
 		# # if '20N' in column:
 
-		unique_name = re.sub(pattern, '', column) # Apply the regex pattern to get the unique name
+		unique_name = re.sub(pattern2, '', column) # Apply the regex pattern to get the unique name
 		if unique_name in unique_names: # Check if the unique name is already a key in the dictionary
 			unique_names[unique_name].append(column) # Append the original column name to the list associated with the unique name
 		else:

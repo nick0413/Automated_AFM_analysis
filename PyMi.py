@@ -10,6 +10,12 @@ import scipy.optimize
 import warnings
 import shutil
 
+units_conversion_dictionary={
+	'um':1e6,
+	'nm':1e9,
+	'm':1,
+}
+
 def fit_image_to_polynomial(image, degree):
 	'''
 	Fits a 2D image to a polynomial of a given degree.
@@ -130,36 +136,76 @@ def get_mi_files_in_folder(folder):
 
 
 
-def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5),poly_degree=2 , scale_factor=1e6, scale_length=1,friction_color_range=2, show=False,current=None, bar_position=(0.8,0.1)):
+
+
+def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5),poly_degree=2 , scale_length=1,friction_color_range=2, show=False,current=None, bar_position=(0.8,0.1), scale_unit='um', axis_ticks=False, axis_labels=False, scale_factor=None, lateral_sensitivity=None,Normal_force=None, force_unit='nN'):
 	
-	# print('1',scale_length)
+
 	'''
-	Plots the friction and topography data of a MiFile object and saves the plot to a file.
-	plots both friction and topography data on the same plot with respective colorbars and no axis labels, 
-	using the extent of the MiFile object as the plot limits and a scale bar of 1 um.
+	Prints the friction and topography images side by side with a scale bar on the top right corner of the image. The scale bar is in the units of the scale_unit parameter. The friction image is scaled to the average friction value +- the friction_color_range*standard deviation of the friction values. The images are saved to a file in the results_folder with the name Friction_force_and_topography_file_path.png
 
 	Parameters
 	----------
 	file: agilent_loader.MiFile
-		The MiFile object to be plotted
-	friction: np.ndarray
-		2D array of friction data
+		The MiFile object to be graphed
+	averaged_friction: np.ndarray
+		The array of averaged friction values
 	topography: np.ndarray
-		2D array of topography data
+		The array of topography values
 	results_folder: str
 		The folder to save the results
-	file_path: str	
-		The name of the file to be saved
+	file_path: str
+		The path to the file to be processed
 	title: str
 		The title of the plot
 	resolution: int
 		The resolution of the plot
 	aspect_ratio: tuple
 		The aspect ratio of the plot
+	poly_degree: int
+		The degree of the polynomial to fit to the image
+	scale_length: float
+		The length of the scale bar in the units of m*scale_factor
+	friction_color_range: float
+		The range of the friction color scale in terms of standard deviations from the mean
 	show: bool
-		Whether or not to show the plot
+		Whether to show the plot or not
+	current: np.ndarray
+		The array of current values, to be used if the user wants to plot the current in Amps as well
+	bar_position: tuple
+		The position of the scale bar in the plot, as a fraction of the image size, to be read as (x% from the left, y% from the bottom). Default is (0.8,0.1)
+	scale_unit: str
+		The unit of the scale bar. Default is 'um' for micrometers, can also be 'nm' or any other string, made to recive LaTex strings as well.
+	axis_ticks: bool
+		Whether to show the axis ticks or not
+	axis_labels: bool
+		Whether to show the axis labels or not
+	scale_factor: float
+		The scale factor to change the units to arbitrary units, it change the scale in the way of 
+		new extent = old extent * scale_factor. Remember .mi files stores data in meters.
+	lateral_sensitivity: float
+		usual value 1.78 * 10^-10
 
+
+	
 	'''
+	# F_normal=-spring_k*setpoint
+
+	force_unit='V'
+	if scale_unit not in units_conversion_dictionary.keys():
+		raise Exception(f"Scale unit {scale_unit} not recognized, please use one of the following: {units_conversion_dictionary.keys()}")
+	
+	if scale_factor is None:
+		scale_factor=units_conversion_dictionary[scale_unit]
+	else:
+		print(f"Using custom scale factor {scale_factor:.2e} to convert units while using {scale_unit} as the unit, this can lead to unexpected results")
+	
+	if lateral_sensitivity is not None:
+		averaged_friction=averaged_friction*lateral_sensitivity
+
+	
+
+
 	
 	if current is not None:
 
@@ -180,18 +226,21 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	if current is not None: 
 		im3=ax[2].imshow(current,cmap='inferno', extent=file.extent)
 		ax[2].set_title(f'Current avg: {np.average(current):4f}')
-		ax[2].set_xticks([])
-		ax[2].set_yticks([])
+		if not axis_ticks:
+			ax[2].set_xticks([])
+			ax[2].set_yticks([])
 		
-	ax[0].set_title(f'Friction avg: {np.average(averaged_friction):.4f}')
-	ax[0].set_xticks([])
-	ax[0].set_yticks([])
+	ax[0].set_title(f'Friction avg: {np.average(averaged_friction):.4f}{force_unit}')
+	if not axis_ticks:
+		ax[0].set_xticks([])
+		ax[0].set_yticks([])
 
 	print("graphing topography")
 
 	ax[1].set_title('Topography')
-	ax[1].set_xticks([])
-	ax[1].set_yticks([])
+	if not axis_ticks:
+		ax[1].set_xticks([])
+		ax[1].set_yticks([])
 
 	print('2',scale_length)
 
@@ -208,14 +257,14 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	
 
 	ax[0].add_line(scale_bar1)
-	ax[0].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
+	ax[0].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} {scale_unit}', color='white', ha='center', va='bottom')
 	ax[1].add_line(scale_bar2)
-	ax[1].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
+	ax[1].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} {scale_unit}', color='white', ha='center', va='bottom')
 
 	if current is not None:
 		scale_bar3 = Line2D([x_low, x_low+ scale_length_um], [y_low,y_low], color='white', linewidth=3)
 		ax[2].add_line(scale_bar3)
-		ax[2].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} $\mu m$', color='white', ha='center', va='bottom')
+		ax[2].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} {scale_unit}', color='white', ha='center', va='bottom')
 
 
 	friction_std=np.std(averaged_friction)
@@ -234,7 +283,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 
 
 
-	cbar1.set_label("Friction force [V]")
+	cbar1.set_label(f"Friction force [{force_unit}]")
 	cbar2.set_label("Height $[ nm]$")
 
 	plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
@@ -295,7 +344,7 @@ def plot_CoF(Cof_for_runs,Cof_for_runs_std,results_folder, show=False):
 	plt.fill_between(x_axis,Cof_for_runs-Cof_for_runs_std,Cof_for_runs+Cof_for_runs_std,alpha=0.5)
 	plt.title("Friction force as a function of cycles")
 	plt.xlabel("Cycles over the sample")
-	plt.ylabel("Friction force [V]")
+	plt.ylabel("Friction force [nN]")
 	plt.savefig(results_folder+"\\Friction_force_for_cycles.png")
 	if show:
 		plt.show()
@@ -344,7 +393,7 @@ def load_buffers_from_file(file):
 
 	return results
 
-def calculate_CoF(friction_array: list[np.ndarray],file_path: str):
+def calculate_CoF(friction_array: list[np.ndarray],file_path: str, conversion_factor=None, Normal_force=None):
 	'''
 	Calculates the coefficient of friction for the cycles over a sample, returns the averaged CoF, the mean and the standard deviation of the CoF.
 
@@ -358,8 +407,18 @@ def calculate_CoF(friction_array: list[np.ndarray],file_path: str):
 	'''
 	
 	if len(friction_array)==2:
+		
 
-		averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5
+		
+		if conversion_factor is not None:
+			friction_array[0]=friction_array[0]*conversion_factor
+			friction_array[1]=friction_array[1]*conversion_factor
+		if Normal_force is not None:
+
+			averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5/Normal_force
+		else:
+			averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5
+			
 		friction_std=np.std(averaged_friction)
 		friction_mean=np.mean(averaged_friction)
 		return averaged_friction,friction_mean,friction_std

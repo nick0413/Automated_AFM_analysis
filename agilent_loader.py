@@ -63,7 +63,7 @@ def _load_mi_image(filename, allow_16_bit=False):
 			'yRestPosition', 'zSensitivity', 'zHysteresis',
 			'zSensorSens', 'zSensorSwGain', 'preampSens',
 			'bufferRange', 'xOffset', 'yOffset', 'xLength',
-			'yLength',
+			'yLength','servoSetpoint'
 			]
 
 

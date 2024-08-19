@@ -22,7 +22,8 @@ newton_conversion_dictionary={
 	'N':1,
 	'uN':1e6,
 	'nN':1e9,
-	'pN':1e12
+	'pN':1e12,
+	'V':1
 
 }
 
@@ -211,9 +212,19 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 		print(f"Using custom scale factor {scale_factor:.2e} to convert units while using {scale_unit} as the unit, this can lead to unexpected results")
 	
 
+	
 
 	if conversion_factor is not None:
 		averaged_friction=averaged_friction*conversion_factor
+		for factor in newton_conversion_dictionary.keys():
+			if average_friction_value*newton_conversion_dictionary[factor]>1:
+				force_unit=factor
+				break
+	else:
+		force_unit='V'
+		# continue
+	
+	
 		
 
 	
@@ -246,10 +257,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 
 	average_friction_value=np.average(averaged_friction)
 
-	for factor in newton_conversion_dictionary.keys():
-		if average_friction_value*newton_conversion_dictionary[factor]>1:
-			force_unit=factor
-			break
+	
 
 	averaged_friction=averaged_friction*newton_conversion_dictionary[force_unit]
 	average_friction_value=np.average(averaged_friction)
@@ -366,13 +374,21 @@ def plot_CoF(Cof_for_runs,Cof_for_runs_std,results_folder, show=False):
 	results_folder: str
 		The folder to save the results
 	'''
+	average_friction_value=np.average(Cof_for_runs)
+	for factor in newton_conversion_dictionary.keys():
+		if average_friction_value*newton_conversion_dictionary[factor]>1:
+			force_unit=factor
+			break
+	
+	Cof_for_runs=Cof_for_runs*newton_conversion_dictionary[force_unit]
+	Cof_for_runs_std=Cof_for_runs_std*newton_conversion_dictionary[force_unit]
 	x_axis=np.arange(len(Cof_for_runs))
 	plt.figure(figsize =(10, 5),dpi=300) 
 	plt.plot(x_axis,Cof_for_runs)
 	plt.fill_between(x_axis,Cof_for_runs-Cof_for_runs_std,Cof_for_runs+Cof_for_runs_std,alpha=0.5)
 	plt.title("Friction force as a function of cycles")
 	plt.xlabel("Cycles over the sample")
-	plt.ylabel("Friction force [nN]")
+	plt.ylabel(f"Friction force [{force_unit}]")
 	plt.savefig(results_folder+"\\Friction_force_for_cycles.png")
 	if show:
 		plt.show()
@@ -433,6 +449,8 @@ def calculate_CoF(friction_array: list[np.ndarray],file_path: str, conversion_fa
 		The path to the file to be processed
 
 	'''
+	if conversion_factor is None:
+		conversion_factor=1
 	
 	if len(friction_array)==2:
 		
@@ -444,9 +462,9 @@ def calculate_CoF(friction_array: list[np.ndarray],file_path: str, conversion_fa
 		# 	friction_array[1]=friction_array[1]*conversion_factor
 
 			
-		friction_std=np.std(averaged_friction*conversion_factor)
-		friction_mean=np.mean(averaged_friction*conversion_factor)
-		return averaged_friction,friction_mean,friction_std
+		Cof_std=np.std(averaged_friction*conversion_factor)
+		Cof=np.mean(averaged_friction*conversion_factor)
+		return averaged_friction,Cof,Cof_std
 
 	else:
 		warnings.warn(f"{file_path} doesnt contain both trace and retrace friction chunks\nExpected 2 friction arrays, got %d" % len(friction_array)+f" with file {file_path}")

@@ -212,7 +212,8 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 		print(f"Using custom scale factor {scale_factor:.2e} to convert units while using {scale_unit} as the unit, this can lead to unexpected results")
 	
 
-	
+	average_friction_value=np.average(averaged_friction)
+
 
 	if conversion_factor is not None:
 		averaged_friction=averaged_friction*conversion_factor
@@ -388,8 +389,9 @@ def plot_CoF(Cof_for_runs,Cof_for_runs_std,results_folder, show=False):
 	plt.fill_between(x_axis,Cof_for_runs-Cof_for_runs_std,Cof_for_runs+Cof_for_runs_std,alpha=0.5)
 	plt.title("Friction force as a function of cycles")
 	plt.xlabel("Cycles over the sample")
-	plt.ylabel(f"Friction force [{force_unit}]")
+	plt.ylabel(f"Friction Coefficient")
 	plt.savefig(results_folder+"\\Friction_force_for_cycles.png")
+	plt.ylim(-1,10)
 	if show:
 		plt.show()
 	plt.clf()

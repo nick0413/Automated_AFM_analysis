@@ -238,11 +238,12 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	cbar2.set_label("Height $[ nm]$")
 
 	plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
+	plt.savefig(results_folder+f"\\Friction_force_and_topography_{file_path}.png")
 	if show:
 		print("showing")
 		plt.show()
 		
-	plt.savefig(results_folder+f"\\Friction_force_and_topography_{file_path}.png")
+	
 	#jhvedlkbnedfvljefbv
 	plt.clf()
 	plt.close()

@@ -9,12 +9,23 @@ from matplotlib.lines import Line2D
 import scipy.optimize
 import warnings
 import shutil
+import copy
 
-units_conversion_dictionary={
+meters_conversion_dictionary={
+	'm':1,
 	'um':1e6,
 	'nm':1e9,
-	'm':1,
+	'pm':1e12
+	
 }
+newton_conversion_dictionary={
+	'N':1,
+	'uN':1e6,
+	'nN':1e9,
+	'pN':1e12
+
+}
+
 
 def fit_image_to_polynomial(image, degree):
 	'''
@@ -138,7 +149,7 @@ def get_mi_files_in_folder(folder):
 
 
 
-def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5),poly_degree=2 , scale_length=1,friction_color_range=2, show=False,current=None, bar_position=(0.8,0.1), scale_unit='um', axis_ticks=False, axis_labels=False, scale_factor=None, lateral_sensitivity=None,Normal_force=None, force_unit='nN'):
+def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography: np.ndarray,results_folder: str,file_path:str, title:str,resolution=300,aspect_ratio=(10,5),poly_degree=2 , scale_length=1,friction_color_range=2, show=False,current=None, bar_position=(0.8,0.1), scale_unit='um', axis_ticks=False, axis_labels=False, scale_factor=None,conversion_factor=None,Normal_force=None, force_unit='nN'):
 	
 
 	'''
@@ -183,25 +194,27 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	scale_factor: float
 		The scale factor to change the units to arbitrary units, it change the scale in the way of 
 		new extent = old extent * scale_factor. Remember .mi files stores data in meters.
-	lateral_sensitivity: float
-		usual value 1.78 * 10^-10
+
 
 
 	
 	'''
 	# F_normal=-spring_k*setpoint
 
-	force_unit='V'
-	if scale_unit not in units_conversion_dictionary.keys():
-		raise Exception(f"Scale unit {scale_unit} not recognized, please use one of the following: {units_conversion_dictionary.keys()}")
+	# force_unit='V'
+	if scale_unit not in meters_conversion_dictionary.keys():
+		raise Exception(f"Scale unit {scale_unit} not recognized, please use one of the following: {meters_conversion_dictionary.keys()}")
 	
 	if scale_factor is None:
-		scale_factor=units_conversion_dictionary[scale_unit]
+		scale_factor=meters_conversion_dictionary[scale_unit]
 	else:
 		print(f"Using custom scale factor {scale_factor:.2e} to convert units while using {scale_unit} as the unit, this can lead to unexpected results")
 	
-	if lateral_sensitivity is not None:
-		averaged_friction=averaged_friction*lateral_sensitivity
+
+
+	if conversion_factor is not None:
+		averaged_friction=averaged_friction*conversion_factor
+		
 
 	
 
@@ -220,8 +233,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	topography=topography-fit_topology
 	topography=topography-np.min(topography)
 
-	im1=ax[0].imshow(averaged_friction, cmap='inferno', extent=file.extent)
-	im2=ax[1].imshow(topography, cmap='inferno', extent=file.extent)
+	
 
 	if current is not None: 
 		im3=ax[2].imshow(current,cmap='inferno', extent=file.extent)
@@ -229,8 +241,24 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 		if not axis_ticks:
 			ax[2].set_xticks([])
 			ax[2].set_yticks([])
+
+
+
+	average_friction_value=np.average(averaged_friction)
+
+	for factor in newton_conversion_dictionary.keys():
+		if average_friction_value*newton_conversion_dictionary[factor]>1:
+			force_unit=factor
+			break
+
+	averaged_friction=averaged_friction*newton_conversion_dictionary[force_unit]
+	average_friction_value=np.average(averaged_friction)
+	im1=ax[0].imshow(averaged_friction, cmap='inferno', extent=file.extent)
+	im2=ax[1].imshow(topography, cmap='inferno', extent=file.extent)
 		
-	ax[0].set_title(f'Friction avg: {np.average(averaged_friction):.4f}{force_unit}')
+	ax[0].set_title(f'Friction avg: {np.average(averaged_friction):.2f}{force_unit}')
+
+
 	if not axis_ticks:
 		ax[0].set_xticks([])
 		ax[0].set_yticks([])
@@ -268,7 +296,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 
 
 	friction_std=np.std(averaged_friction)
-	average_friction_value=np.average(averaged_friction)
+	
 
 	im1.set_clim(vmin=average_friction_value-friction_color_range*friction_std, vmax=average_friction_value+friction_color_range*friction_std)
 
@@ -293,7 +321,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 		plt.show()
 		
 	
-	#jhvedlkbnedfvljefbv
+	
 	plt.clf()
 	plt.close()
 
@@ -409,18 +437,15 @@ def calculate_CoF(friction_array: list[np.ndarray],file_path: str, conversion_fa
 	if len(friction_array)==2:
 		
 
-		
-		if conversion_factor is not None:
-			friction_array[0]=friction_array[0]*conversion_factor
-			friction_array[1]=friction_array[1]*conversion_factor
-		if Normal_force is not None:
+		averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5
 
-			averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5/Normal_force
-		else:
-			averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5
+		# if conversion_factor is not None:
+		# 	friction_array[0]=friction_array[0]*conversion_factor
+		# 	friction_array[1]=friction_array[1]*conversion_factor
+
 			
-		friction_std=np.std(averaged_friction)
-		friction_mean=np.mean(averaged_friction)
+		friction_std=np.std(averaged_friction*conversion_factor)
+		friction_mean=np.mean(averaged_friction*conversion_factor)
 		return averaged_friction,friction_mean,friction_std
 
 	else:

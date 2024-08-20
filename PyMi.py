@@ -223,10 +223,19 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 
 	average_friction_value=np.average(averaged_friction)
 
+	print(averaged_friction)
+	plt.imshow(averaged_friction, cmap='inferno', extent=file.extent)
+	plt.title(title)
+	plt.colorbar()
+	plt.show()
+	plt.clf()
+	plt.close()
+
 
 	if conversion_factor is not None:
 		averaged_friction=averaged_friction*conversion_factor
 		average_friction_value=np.average(averaged_friction)
+		print('finding conversion factor')
 		for factor in newton_conversion_dictionary.keys():
 			if average_friction_value*newton_conversion_dictionary[factor]>1:
 				force_unit=factor
@@ -269,10 +278,6 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 
 	
 
-	
-
-	
-	average_friction_value=np.average(averaged_friction)
 	average_friction_value=np.average(averaged_friction)
 	im1=ax[0].imshow(averaged_friction, cmap='inferno', extent=file.extent)
 	im2=ax[1].imshow(topography, cmap='inferno', extent=file.extent)
@@ -319,7 +324,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	friction_std=np.std(averaged_friction)
 	
 
-	im1.set_clim(vmin=average_friction_value-friction_color_range*friction_std, vmax=average_friction_value+friction_color_range*friction_std)
+	# im1.set_clim(vmin=average_friction_value-friction_color_range*friction_std, vmax=average_friction_value+friction_color_range*friction_std)
 
 	cbar1=fig.colorbar(im1,ax=ax[0],fraction=0.046, pad=0.04)
 	cbar2=fig.colorbar(im2,ax=ax[1],fraction=0.046, pad=0.04)
@@ -467,6 +472,8 @@ def calculate_CoF(friction_array: list[np.ndarray],file_path: str, conversion_fa
 		
 
 		averaged_friction = ((friction_array[1]) - (friction_array[0]))*0.5
+
+		print(averaged_friction)
 
 		# if conversion_factor is not None:
 		# 	friction_array[0]=friction_array[0]*conversion_factor

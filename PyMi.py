@@ -18,6 +18,14 @@ meters_conversion_dictionary={
 	'pm':1e12
 	
 }
+latex_units_dictionary={
+	'm':r'$m$',
+	'um':r'$\mu m$',
+	'nm':r'$nm$',
+	'pm':r'$pm$'
+	
+
+}
 newton_conversion_dictionary={
 	'N':1,
 	'uN':1e6,
@@ -207,9 +215,10 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 		raise Exception(f"Scale unit {scale_unit} not recognized, please use one of the following: {meters_conversion_dictionary.keys()}")
 	
 	if scale_factor is None:
+		print(type(scale_factor))
 		scale_factor=meters_conversion_dictionary[scale_unit]
 	else:
-		print(f"Using custom scale factor {scale_factor:.2e} to convert units while using {scale_unit} as the unit, this can lead to unexpected results")
+		print(f"Using custom scale factor {scale_factor} to convert units while using {scale_unit} as the unit, this can lead to unexpected results")
 	
 
 	average_friction_value=np.average(averaged_friction)
@@ -217,9 +226,11 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 
 	if conversion_factor is not None:
 		averaged_friction=averaged_friction*conversion_factor
+		average_friction_value=np.average(averaged_friction)
 		for factor in newton_conversion_dictionary.keys():
 			if average_friction_value*newton_conversion_dictionary[factor]>1:
 				force_unit=factor
+				averaged_friction=averaged_friction*newton_conversion_dictionary[force_unit]
 				break
 	else:
 		force_unit='V'
@@ -256,11 +267,12 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 
 
 
-	average_friction_value=np.average(averaged_friction)
+	
 
 	
 
-	averaged_friction=averaged_friction*newton_conversion_dictionary[force_unit]
+	
+	average_friction_value=np.average(averaged_friction)
 	average_friction_value=np.average(averaged_friction)
 	im1=ax[0].imshow(averaged_friction, cmap='inferno', extent=file.extent)
 	im2=ax[1].imshow(topography, cmap='inferno', extent=file.extent)
@@ -292,7 +304,7 @@ def graph_friction_n_topography(file, averaged_friction: np.ndarray, topography:
 	scale_bar1 = Line2D([x_low, x_low+ scale_length_um], [y_low,y_low], color='white', linewidth=3)
 	scale_bar2 = Line2D([x_low, x_low+ scale_length_um], [y_low,y_low], color='white', linewidth=3)
 	
-
+	scale_unit=latex_units_dictionary[scale_unit]
 	ax[0].add_line(scale_bar1)
 	ax[0].text(x_low+ scale_length_um/2, y_low, f'{scale_length_um} {scale_unit}', color='white', ha='center', va='bottom')
 	ax[1].add_line(scale_bar2)
@@ -376,13 +388,10 @@ def plot_CoF(Cof_for_runs,Cof_for_runs_std,results_folder, show=False):
 		The folder to save the results
 	'''
 	average_friction_value=np.average(Cof_for_runs)
-	for factor in newton_conversion_dictionary.keys():
-		if average_friction_value*newton_conversion_dictionary[factor]>1:
-			force_unit=factor
-			break
+
 	
-	Cof_for_runs=Cof_for_runs*newton_conversion_dictionary[force_unit]
-	Cof_for_runs_std=Cof_for_runs_std*newton_conversion_dictionary[force_unit]
+	Cof_for_runs=Cof_for_runs
+	Cof_for_runs_std=Cof_for_runs_std
 	x_axis=np.arange(len(Cof_for_runs))
 	plt.figure(figsize =(10, 5),dpi=300) 
 	plt.plot(x_axis,Cof_for_runs)
@@ -391,7 +400,7 @@ def plot_CoF(Cof_for_runs,Cof_for_runs_std,results_folder, show=False):
 	plt.xlabel("Cycles over the sample")
 	plt.ylabel(f"Friction Coefficient")
 	plt.savefig(results_folder+"\\Friction_force_for_cycles.png")
-	plt.ylim(-1,10)
+	# plt.ylim(-1,10)
 	if show:
 		plt.show()
 	plt.clf()

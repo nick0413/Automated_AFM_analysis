@@ -11,6 +11,9 @@ Depending on your use case you may have different requirements, but in general y
 * compatible matplotlib version
 * compatible scipy version
 
+$$
+\int_{a}^{b} f(x) \,dx = F(b) - F(a)
+$$
 
 ### Install python
 ----------

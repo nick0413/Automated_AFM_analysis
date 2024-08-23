@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import odr, integrate
-import plotly.graph_objects as go
+# import plotly.graph_objects as go
 import os
 
 # create function, test one or random test per graph
@@ -33,8 +33,8 @@ def raw_or_excel():
     first_input = get_user_input('Do you want to process raw data or data from an excel file? (raw/excel): ', ['raw', 'excel']) # calls get user input function
     if first_input == 'raw': # if the user chooses to process raw data
         #---------------------------MARK: Data Files--------------------
-        # raw_files_folder_path = input('Please enter the path to the folder containing the raw data files: ') # prompt the user for the path to the folder containing the raw data files
-        raw_files_folder_path = 'C:\\Users\\alber\\OneDrive - University of Calgary\\2024Tribometer\\NanoIndentation\\Vinay NanoIndentation Data' # can also modify to make it so that the user can code the path in without interfacing with the terminal
+        raw_files_folder_path = input('Please enter the path to the folder containing the raw data files: ') # prompt the user for the path to the folder containing the raw data files
+        # raw_files_folder_path = 'C:\\Users\\alber\\Summer Research Code\\Automated_AFM_analysis\\Tests' # can also modify to make it so that the user can code the path in without interfacing with the terminal
         raw_data_processing(raw_files_folder_path) # call the raw data processing function
     elif first_input == 'excel': # if the user chooses to process data from an excel file
         excel_path = input('Please enter the path to the excel file: ') # prompt the user for the path to the excel file
@@ -71,8 +71,9 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
             continue # continue to the next iteration
         avg_std_sample = pd.DataFrame(columns=['File Name', 'Ut', 'Ur', 'Ue']) # used for storing the Ut, Ur, Ue values of each file
         # print(f'This is the file list: {files}')
+        plt.figure(figsize=(15,9)) # create a new figure for each plot
 
-        fig = go.Figure() # create a plotly figure
+        # fig = go.Figure() # create a plotly figure
         for count, file in enumerate(files): # iterates through the files in the folder
             files_in_folder.append(file) # appends the file to the list <-- to be used for counting the number of files in the folder
             file_path = os.path.join(root, file) # joins the root and file to obtain the file's specific path
@@ -84,8 +85,9 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
             sample = path_components[-2] # the second-to-last path component is the sample name as the file is within that sub-directory
             # Assuming the files are TXTs, you can read them into DataFrames
             if file.endswith('.txt'):
-                
                 #usecols=['Depth (nm)', 'Load (µN)'],
+                if os.path.getsize(file_path) < 4000: # if the file is empty
+                    continue
                 df = pd.read_csv(file_path, sep='\t', header=3, usecols=[0,1], encoding='utf-8') # Assuming the data is tab-separated, read the file into a dataframe
                 df.loc[-1] = df.columns # adding the column names to the -1st row
                 df.index = df.index + 1 # shifting index 
@@ -94,21 +96,27 @@ def raw_data_processing(folder_path: str) -> pd.DataFrame:
                 # TODO add a check to see if the columns in the file are in the correct order, so that it is not hardcoded
                 # print(df.columns)
                 df = df.astype(float) # converting the columns to float (decimal numbers) types
-                fig.add_trace(go.Scatter(x=df['Depth (nm)'], y=df['Load (µN)'], mode='lines', name=file))
-                # plt.plot(df['Depth (nm)'], df['Load (µN)'], label=f'{sample} {file}') # plot the depth vs load curve
-                # plt.legend() # show the legend
+                # fig.add_trace(go.Scatter(x=df['Depth (nm)'], y=df['Load (µN)'], mode='lines', name=file))
+                plt.plot(df['Depth (nm)'], df['Load (µN)'], label=f'{sample} {file}') # plot the depth vs load curve
+                plt.legend(loc='best') # show the legend
 
                 avg_std_sample.loc[count] = [file, *discrete_integration(df)] # appends the Ut, Ur, Ue values (obtained from trapezoidal integration) to the avg_std_sample dataframe
         
         # Customize layout
-        fig.update_layout(
-            title=sample,
-            xaxis_title='Depth (nm)',
-            yaxis_title='Load (µN)')
+        # fig.update_layout(
+        #     title=sample,
+        #     xaxis_title='Depth (nm)',
+        #     yaxis_title='Load (µN)')
 
-        # Show the figure
-        fig.show()
-        fig.data = []
+        # # Show the figure
+        # fig.show()
+        # fig.data = []
+        os.makedirs(os.path.join(folder_path, 'Output Plots'), exist_ok=True) # create a folder called 'Output Plots' if it does not exist
+        output_folder_images = os.path.join(folder_path, 'Output Plots') # create a path to the 'Output Plots' folder
+        plt.xlabel('Depth (nm)') # label the x-axis
+        plt.ylabel('Load (µN)') # label the y-axis
+        plt.savefig(os.path.join(output_folder_images, f'{sample}.png')) # save the plot as a png file
+        plt.close() # close the plot
         # plt.show() # show the plot
 
         #TODO fix this part
